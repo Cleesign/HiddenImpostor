@@ -1,0 +1,42 @@
+name: HiddenImpostor
+options:
+  bundleIdPrefix: com.hiddenimpostor
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+targets:
+  HiddenImpostor:
+    type: application
+    platform: iOS
+    sources:
+      - path: HiddenImpostor
+        excludes:
+          - "Web"
+          - "Web/**"
+      # The game itself, copied into the app as a folder so its relative paths keep working.
+      - path: HiddenImpostor/Web
+        type: folder
+        buildPhase: resources
+    info:
+      path: Support/Info.plist
+      properties:
+        CFBundleDisplayName: Impostor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIRequiresFullScreen: true
+        UIUserInterfaceStyle: Dark
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hiddenimpostor.app
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    scheme: {}

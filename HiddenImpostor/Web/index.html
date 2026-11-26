@@ -1,0 +1,990 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Hidden Impostor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="vendor/fonts.css">
+<link rel="stylesheet" href="vendor/tailwind.css">
+<script src="vendor/lucide.min.js"></script>
+<style>
+/* Layout: one phone-width column, a screen stack with a sticky bottom action dock. Single deliberate night theme. */
+:root{
+  color-scheme: dark;
+  --night:#0a0b1e;        /* page ground, deep blue-black */
+  --deck:#14163a;         /* raised surface */
+  --deck-2:#1d2050;       /* pressed / input surface */
+  --line:#2c2f6b;         /* hairlines */
+  --ink:#eef0ff;          /* primary text */
+  --mute:#9a9fd0;         /* secondary text, blue-biased neutral */
+  --violet:#8b5cf6;       /* brand accent */
+  --crew:#3dff9a;         /* crewmate neon */
+  --imp:#ff2e55;          /* impostor crimson */
+  --felt:#122a2a;         /* table felt */
+  --font-display:"Chakra Petch", ui-sans-serif, system-ui, sans-serif;
+  --font-body:"DM Sans", ui-sans-serif, -apple-system, system-ui, sans-serif;
+}
+html,body{height:100%}
+body{background:var(--night);color:var(--ink);font-family:var(--font-body);
+  -webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--night)}
+.font-display{font-family:var(--font-display)}
+.tnum{font-variant-numeric:tabular-nums}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+   radial-gradient(1px 1px at 12% 18%, #ffffff55 50%, transparent 51%),
+   radial-gradient(1px 1px at 78% 9%, #ffffff40 50%, transparent 51%),
+   radial-gradient(1.5px 1.5px at 64% 42%, #ffffff30 50%, transparent 51%),
+   radial-gradient(1px 1px at 30% 70%, #ffffff40 50%, transparent 51%),
+   radial-gradient(1px 1px at 88% 82%, #ffffff35 50%, transparent 51%),
+   radial-gradient(60% 40% at 50% -10%, #3b2a8a55, transparent 70%),
+   radial-gradient(50% 35% at 100% 100%, #1b2a7a40, transparent 70%);}
+.app{position:relative;z-index:1;max-width:440px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.screen{flex:1;display:flex;flex-direction:column;animation:enter .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes enter{from{opacity:.0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.scroll{flex:1;padding-block:8px 16px;display:flex;flex-direction:column;gap:16px}
+.dock{position:sticky;bottom:0;z-index:5;padding-block:20px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;
+  background:linear-gradient(to bottom,transparent,var(--night) 22px)}
+.group{background:var(--deck);border:1px solid var(--line);border-radius:18px}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:16px;font-weight:700;font-size:17px;
+  transition:transform .12s, opacity .2s, background .2s;user-select:none}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.35;pointer-events:none}
+.btn-primary{background:var(--violet);color:#fff;box-shadow:0 8px 24px -8px #8b5cf6aa}
+.btn-crew{background:var(--crew);color:#03200f;box-shadow:0 8px 28px -8px #3dff9a99}
+.btn-imp{background:var(--imp);color:#fff;box-shadow:0 8px 28px -8px #ff2e5599}
+.btn-ghost{background:var(--deck-2);color:var(--ink);border:1px solid var(--line)}
+.seg{display:grid;background:var(--deck-2);border-radius:12px;padding:3px;gap:3px}
+.seg button{min-height:38px;border-radius:9px;font-weight:600;color:var(--mute);font-size:15px;transition:background .2s,color .2s}
+.seg button[aria-pressed="true"]{background:var(--violet);color:#fff}
+.seg button:disabled{opacity:.3}
+input[type=text]{background:transparent;color:var(--ink);outline:none;width:100%;font-size:17px}
+input[type=text]::placeholder{color:#5f649a}
+input[type=range]{width:100%;accent-color:var(--violet);height:28px}
+:focus-visible{outline:2px solid var(--crew);outline-offset:2px}
+.stepper button{width:44px;height:44px;border-radius:12px;background:var(--deck-2);display:grid;place-items:center;border:1px solid var(--line)}
+.stepper button:disabled{opacity:.3}
+
+/* Table + card */
+.table{flex:1;min-height:440px;border-radius:28px;position:relative;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(80% 60% at 50% 45%, #1b3d3d, var(--felt) 70%, #0a1818);border:1px solid #1f4747;
+  box-shadow:inset 0 0 60px #000a}
+.card3d{width:min(72%,260px);aspect-ratio:5/7;max-width:100%;perspective:1200px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.card3d.flipped .inner{transform:rotateY(180deg)}
+.card3d.snap .inner{transition:none}
+.face{position:absolute;inset:0;border-radius:20px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.back{background:
+  repeating-linear-gradient(45deg,#2a1f6e 0 10px,#231a5e 10px 20px);border:6px solid #f1f0ff;box-shadow:0 24px 40px -10px #000c}
+.back .emblem{width:84px;height:84px;border-radius:50%;background:var(--night);display:grid;place-items:center;border:2px solid var(--violet)}
+.front{transform:rotateY(180deg);border:6px solid #f1f0ff;box-shadow:0 24px 40px -10px #000c}
+.front.crew{background:linear-gradient(160deg,#06281a,#0b3b27)}
+.front.imp{background:linear-gradient(160deg,#3a0613,#5a0a1f)}
+.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #8b5cf666}50%{box-shadow:0 0 0 14px #8b5cf600}}
+
+/* Timer ring */
+.ring{width:min(70vw,250px);aspect-ratio:1;max-width:100%}
+.alarm{animation:alarm .5s steps(2) 6}
+@keyframes alarm{50%{background:#ff2e5533}}
+
+.vote{border-radius:16px;border:1.5px solid var(--line);background:var(--deck);padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;transition:border-color .2s, background .2s, transform .12s}
+.vote:active{transform:scale(.97)}
+.vote[aria-pressed="true"]{border-color:var(--imp);background:#2a0d22}
+.vote .tick{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;transition:all .2s}
+.vote[aria-pressed="true"] .tick{background:var(--imp);border-color:var(--imp)}
+.avatar{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-family:var(--font-display);color:#0a0b1e;flex:none}
+.sheet-back{position:fixed;inset:0;background:#000a;z-index:20;display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
+.sheet{width:100%;max-width:440px;max-height:82%;background:var(--deck);border-radius:24px 24px 0 0;border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;animation:up .3s cubic-bezier(.2,.8,.2,1)}
+.sheet-body{display:flex;flex-direction:column;min-height:0;flex:1}
+.sheet-body > .overflow-y-auto, #pickList{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.grab{display:flex;justify-content:center;padding:4px 0 14px;margin-top:-6px;cursor:grab}
+.grab span{width:44px;height:5px;border-radius:99px;background:var(--line)}
+.drag-zone{touch-action:none;user-select:none;-webkit-user-select:none}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+
+/* Home hero: a fanned hand of face-down cards, one turned crimson */
+.hero-title{font-size:clamp(48px,15vw,64px);line-height:.92;letter-spacing:-.01em;display:flex;flex-direction:column;text-wrap:balance}
+.imp-word{color:var(--imp);text-shadow:0 0 28px #ff2e5566}
+.fan{position:relative;height:190px;width:100%;max-width:100%}
+.fc{position:absolute;top:10px;left:50%;width:112px;aspect-ratio:5/7;max-width:100%;border-radius:14px;border:5px solid #f1f0ff;
+  background:repeating-linear-gradient(45deg,#2a1f6e 0 9px,#231a5e 9px 18px);box-shadow:0 18px 30px -10px #000c;transform-origin:50% 120%}
+.fc-l{transform:translateX(-50%) rotate(-16deg) translateX(-34px)}
+.fc-m{transform:translateX(-50%) translateY(-6px);display:grid;place-items:center;animation:float 4s ease-in-out infinite}
+.fc-r{transform:translateX(-50%) rotate(16deg) translateX(34px);background:linear-gradient(160deg,#5a0a1f,#2a0614);display:grid;place-items:center}
+.fc-face{color:var(--imp)}
+.fc-emblem{width:54px;height:54px;border-radius:50%;background:var(--night);border:2px solid var(--violet);display:grid;place-items:center;color:var(--violet)}
+@keyframes float{50%{transform:translateX(-50%) translateY(-14px)}}
+.chip{font-size:13px;font-weight:600;padding:6px 12px;border-radius:99px;background:var(--deck);border:1px solid var(--line);color:var(--mute)}
+.lang-pill{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:99px;background:var(--deck);border:1px solid var(--line);font-weight:700;font-size:13px;color:var(--ink)}
+/* Swipe-to-delete rows */
+.swipe{position:relative;overflow:hidden}
+.swipe-del{position:absolute;top:0;bottom:0;right:0;width:96px;background:var(--imp);color:#fff;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.swipe-row{position:relative;background:var(--deck);touch-action:pan-y;user-select:none;-webkit-user-select:none}
+/* Vietnamese companion lines */
+.vi{font-family:var(--font-body);font-size:13px;line-height:1.35;color:#c8b8ff;opacity:.95;margin-top:3px}
+.vi-strong{font-size:15px;font-weight:700}
+.vi-word{font-family:var(--font-body);font-size:19px;font-weight:700;line-height:1.2;margin-top:6px;color:#eafff3;text-wrap:balance}
+.vi-inline{font-size:13px;font-weight:500;color:#c8b8ff}
+.face.bi{padding:14px}
+.switch{width:51px;height:31px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.switch span{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px #0006;transition:transform .2s}
+[aria-checked="true"] .switch{background:var(--crew)}
+[aria-checked="true"] .switch span{transform:translateX(20px)}
+.sheet-back.still,.sheet-back.still .sheet{animation:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="stars" aria-hidden="true"></div>
+<div class="app" id="app"></div>
+<div id="sheet"></div>
+
+<script>
+/* ---------- Word bank: [en word, en hint, nl word, nl hint, vi word, vi hint] ---------- */
+const WORDS = {"daily": [["Coffee Maker", "It is found in the kitchen", "Koffiezetapparaat", "Je vindt het in de keuken", "Máy pha cà phê", "Nó ở trong nhà bếp"], ["Toothbrush", "Part of a morning routine", "Tandenborstel", "Hoort bij de ochtendroutine", "Bàn chải đánh răng", "Một phần của thói quen buổi sáng"], ["Umbrella", "You need it in certain weather", "Paraplu", "Je hebt het nodig bij bepaald weer", "Cái ô (dù)", "Bạn cần nó khi trời mưa hoặc nắng"], ["Alarm Clock", "It lives by the bed", "Wekker", "Staat naast het bed", "Đồng hồ báo thức", "Nó nằm cạnh giường"], ["Washing Machine", "It is in the laundry room", "Wasmachine", "Staat in de wasruimte", "Máy giặt", "Nó ở trong phòng giặt"], ["Backpack", "You carry it around", "Rugzak", "Je draagt het met je mee", "Ba lô", "Bạn mang nó theo người"], ["Remote Control", "Used on the couch", "Afstandsbediening", "Gebruik je op de bank", "Điều khiển từ xa", "Dùng khi ngồi trên ghế sofa"], ["Mirror", "Found in the bathroom", "Spiegel", "Hangt in de badkamer", "Gương", "Có trong phòng tắm"], ["Toaster", "A kitchen appliance", "Broodrooster", "Een keukenapparaat", "Máy nướng bánh mì", "Một thiết bị nhà bếp"], ["Keys", "You keep them in your pocket", "Sleutels", "Je hebt ze in je zak", "Chìa khóa", "Bạn để chúng trong túi"], ["Pillow", "Related to sleep", "Kussen", "Heeft met slapen te maken", "Gối", "Liên quan đến giấc ngủ"], ["Wallet", "You take it when shopping", "Portemonnee", "Neem je mee om te winkelen", "Ví tiền", "Bạn mang theo khi đi mua sắm"], ["Headphones", "Used with music", "Koptelefoon", "Gebruik je bij muziek", "Tai nghe", "Dùng để nghe nhạc"], ["Refrigerator", "It keeps something cold", "Koelkast", "Houdt iets koud", "Tủ lạnh", "Nó giữ thứ gì đó lạnh"], ["Shower", "Part of a daily wash", "Douche", "Hoort bij het dagelijkse wassen", "Vòi sen", "Một phần của việc tắm rửa hằng ngày"], ["Vacuum Cleaner", "Used for cleaning", "Stofzuiger", "Gebruik je om schoon te maken", "Máy hút bụi", "Dùng để dọn dẹp"], ["Sunglasses", "You wear them outside", "Zonnebril", "Draag je buiten", "Kính râm", "Bạn đeo nó khi ra ngoài"], ["Light Bulb", "It is on the ceiling", "Gloeilamp", "Zit aan het plafond", "Bóng đèn", "Nó ở trên trần nhà"], ["Phone Charger", "It needs electricity", "Telefoonoplader", "Heeft stroom nodig", "Sạc điện thoại", "Nó cần điện"], ["Trash Can", "Every room has one", "Prullenbak", "Elke kamer heeft er een", "Thùng rác", "Phòng nào cũng có một cái"], ["Microwave", "It heats things up", "Magnetron", "Warmt dingen op", "Lò vi sóng", "Nó làm nóng đồ ăn"], ["Notebook", "Used at school or work", "Schrift", "Gebruik je op school of werk", "Cuốn vở", "Dùng ở trường hoặc nơi làm việc"], ["Bicycle", "A way to get around", "Fiets", "Een manier om je te verplaatsen", "Xe đạp", "Một cách để đi lại"], ["Doorbell", "Found at the front door", "Deurbel", "Zit bij de voordeur", "Chuông cửa", "Ở cửa trước"], ["Hairdryer", "Used after a shower", "Föhn", "Gebruik je na het douchen", "Máy sấy tóc", "Dùng sau khi tắm"], ["Sofa", "Living room furniture", "Bankstel", "Meubel in de woonkamer", "Ghế sofa", "Đồ nội thất phòng khách"], ["Calendar", "Helps you plan", "Kalender", "Helpt je plannen", "Lịch", "Giúp bạn lên kế hoạch"], ["Scissors", "Used for crafts", "Schaar", "Gebruik je bij het knutselen", "Cái kéo", "Dùng khi làm đồ thủ công"], ["Candle", "Gives off light", "Kaars", "Geeft licht", "Nến", "Tỏa ra ánh sáng"], ["Laptop", "Used for work", "Laptop", "Gebruik je voor werk", "Máy tính xách tay", "Dùng để làm việc"], ["Shoelaces", "Part of what you wear", "Veters", "Onderdeel van wat je draagt", "Dây giày", "Một phần của đồ bạn mặc"], ["Ironing Board", "Related to clothes", "Strijkplank", "Heeft met kleding te maken", "Bàn ủi đồ", "Liên quan đến quần áo"], ["Coat Hanger", "Found in a closet", "Kledinghanger", "Vind je in de kast", "Móc treo quần áo", "Có trong tủ quần áo"], ["Bus Stop", "Part of a commute", "Bushalte", "Hoort bij je reis naar werk", "Trạm xe buýt", "Một phần của đường đi làm"], ["Dishwasher", "Used after dinner", "Vaatwasser", "Gebruik je na het eten", "Máy rửa bát", "Dùng sau bữa tối"], ["Kettle", "Makes something hot", "Waterkoker", "Maakt iets heet", "Ấm đun nước", "Làm nóng thứ gì đó"], ["Frying Pan", "Used on the stove", "Koekenpan", "Gebruik je op het fornuis", "Chảo rán", "Dùng trên bếp"], ["Blanket", "Keeps you warm", "Deken", "Houdt je warm", "Chăn", "Giữ ấm cho bạn"], ["Towel", "Used when you are wet", "Handdoek", "Gebruik je als je nat bent", "Khăn tắm", "Dùng khi bạn bị ướt"], ["Comb", "Used on your hair", "Kam", "Gebruik je voor je haar", "Cái lược", "Dùng cho tóc"], ["Soap", "Used to get clean", "Zeep", "Gebruik je om schoon te worden", "Xà phòng", "Dùng để làm sạch"], ["Toilet Paper", "Found in the bathroom", "Wc-papier", "Vind je in de badkamer", "Giấy vệ sinh", "Có trong phòng tắm"], ["Spoon", "Used at the table", "Lepel", "Gebruik je aan tafel", "Cái thìa", "Dùng ở bàn ăn"], ["Plate", "Used at mealtime", "Bord", "Gebruik je bij het eten", "Cái đĩa", "Dùng trong bữa ăn"], ["Mug", "You drink from it", "Mok", "Je drinkt eruit", "Cốc", "Bạn uống từ nó"], ["Water Bottle", "You carry it with you", "Waterfles", "Neem je met je mee", "Chai nước", "Bạn mang theo bên mình"], ["Lunchbox", "Taken to school or work", "Broodtrommel", "Neem je mee naar school of werk", "Hộp cơm trưa", "Mang đến trường hoặc chỗ làm"], ["Pen", "Used for writing", "Pen", "Gebruik je om te schrijven", "Bút", "Dùng để viết"], ["Stapler", "Found on a desk", "Nietmachine", "Staat op een bureau", "Cái dập ghim", "Có trên bàn làm việc"], ["Smartphone", "You check it all the time", "Smartphone", "Je kijkt er de hele tijd op", "Điện thoại thông minh", "Bạn xem nó suốt ngày"], ["Television", "Something you watch", "Televisie", "Iets waar je naar kijkt", "Tivi", "Thứ bạn xem"], ["Window", "Part of a house", "Raam", "Onderdeel van een huis", "Cửa sổ", "Một phần của ngôi nhà"], ["Curtains", "They hang in a room", "Gordijnen", "Hangen in een kamer", "Rèm cửa", "Treo trong phòng"], ["Doormat", "At the entrance", "Deurmat", "Bij de ingang", "Thảm chùi chân", "Ở lối vào"], ["Mailbox", "Outside the house", "Brievenbus", "Buiten het huis", "Hộp thư", "Bên ngoài ngôi nhà"], ["Garden Hose", "Used outdoors", "Tuinslang", "Gebruik je buiten", "Vòi tưới vườn", "Dùng ngoài trời"], ["Lawn Mower", "Used in the yard", "Grasmaaier", "Gebruik je in de tuin", "Máy cắt cỏ", "Dùng trong sân"], ["Car Keys", "Needed to go somewhere", "Autosleutels", "Nodig om ergens heen te gaan", "Chìa khóa ô tô", "Cần để đi đâu đó"], ["Traffic Light", "Seen on the road", "Stoplicht", "Zie je op de weg", "Đèn giao thông", "Thấy trên đường"], ["Shopping Cart", "Found at the store", "Winkelwagen", "Vind je in de winkel", "Xe đẩy siêu thị", "Có ở cửa hàng"], ["Credit Card", "Used to pay", "Creditcard", "Gebruik je om te betalen", "Thẻ tín dụng", "Dùng để thanh toán"], ["Receipt", "You get it after paying", "Kassabon", "Krijg je na het betalen", "Hóa đơn", "Bạn nhận sau khi thanh toán"], ["Wristwatch", "You wear it every day", "Horloge", "Draag je elke dag", "Đồng hồ đeo tay", "Bạn đeo nó mỗi ngày"], ["Glasses", "They help you see", "Bril", "Helpt je zien", "Kính mắt", "Giúp bạn nhìn rõ"], ["Slippers", "Worn at home", "Pantoffels", "Draag je thuis", "Dép đi trong nhà", "Đi ở nhà"], ["Pajamas", "Worn at night", "Pyjama", "Draag je 's nachts", "Đồ ngủ", "Mặc vào ban đêm"], ["Raincoat", "Worn in bad weather", "Regenjas", "Draag je bij slecht weer", "Áo mưa", "Mặc khi thời tiết xấu"], ["Socks", "Worn on your feet", "Sokken", "Draag je aan je voeten", "Tất (vớ)", "Đi ở chân"], ["Bathtub", "Found in the bathroom", "Bad", "Vind je in de badkamer", "Bồn tắm", "Có trong phòng tắm"], ["Cutting Board", "Used to prepare food", "Snijplank", "Gebruik je om eten voor te bereiden", "Cái thớt", "Dùng để chuẩn bị đồ ăn"], ["Oven", "It gets very hot", "Oven", "Wordt erg heet", "Lò nướng", "Nó rất nóng"], ["Ceiling Fan", "It moves air around", "Plafondventilator", "Verplaatst lucht", "Quạt trần", "Làm không khí chuyển động"], ["Heater", "Used in winter", "Kachel", "Gebruik je in de winter", "Máy sưởi", "Dùng vào mùa đông"], ["Air Conditioner", "Used in summer", "Airco", "Gebruik je in de zomer", "Máy lạnh", "Dùng vào mùa hè"], ["Bookshelf", "It holds things in a room", "Boekenkast", "Houdt dingen vast in een kamer", "Giá sách", "Giữ đồ vật trong phòng"], ["Desk Lamp", "Used for reading", "Bureaulamp", "Gebruik je om te lezen", "Đèn bàn", "Dùng để đọc sách"], ["Power Strip", "Related to electricity", "Stekkerdoos", "Heeft met stroom te maken", "Ổ cắm điện kéo dài", "Liên quan đến điện"], ["Batteries", "They give power", "Batterijen", "Geven energie", "Pin", "Cung cấp năng lượng"], ["Ladder", "Helps you reach things", "Ladder", "Helpt je ergens bij te komen", "Cái thang", "Giúp bạn với tới chỗ cao"], ["Hammer", "Found in a toolbox", "Hamer", "Zit in een gereedschapskist", "Cái búa", "Có trong hộp dụng cụ"], ["Tape Measure", "Used for measuring", "Rolmaat", "Gebruik je om te meten", "Thước dây", "Dùng để đo"], ["Broom", "Used for cleaning floors", "Bezem", "Gebruik je om de vloer schoon te maken", "Cái chổi", "Dùng để quét nhà"], ["Laundry Basket", "It holds clothes", "Wasmand", "Daar gaan kleren in", "Giỏ đựng quần áo", "Đựng quần áo"], ["Clothespin", "Used with laundry", "Wasknijper", "Gebruik je bij de was", "Kẹp phơi quần áo", "Dùng khi phơi đồ"], ["Elevator", "Found in buildings", "Lift", "Vind je in gebouwen", "Thang máy", "Có trong các tòa nhà"], ["Stairs", "They take you up or down", "Trap", "Brengt je omhoog of omlaag", "Cầu thang", "Đưa bạn lên hoặc xuống"], ["Parking Lot", "Where cars wait", "Parkeerplaats", "Waar auto's wachten", "Bãi đỗ xe", "Nơi ô tô đợi"], ["Supermarket", "Where you buy things", "Supermarkt", "Waar je dingen koopt", "Siêu thị", "Nơi bạn mua đồ"], ["Newspaper", "Something you read", "Krant", "Iets dat je leest", "Tờ báo", "Thứ bạn đọc"], ["Envelope", "Related to mail", "Envelop", "Heeft met post te maken", "Phong bì", "Liên quan đến thư từ"], ["Calculator", "Helps with numbers", "Rekenmachine", "Helpt met getallen", "Máy tính bỏ túi", "Giúp tính toán"], ["Backyard", "Part of a home", "Achtertuin", "Onderdeel van een huis", "Sân sau", "Một phần của ngôi nhà"], ["Thermostat", "Controls something at home", "Thermostaat", "Regelt iets in huis", "Bộ điều chỉnh nhiệt độ", "Điều khiển thứ gì đó trong nhà"], ["Bed Sheets", "Found on the bed", "Lakens", "Liggen op het bed", "Ga trải giường", "Ở trên giường"], ["Shampoo", "Used in the shower", "Shampoo", "Gebruik je onder de douche", "Dầu gội", "Dùng khi tắm"], ["Deodorant", "Part of a morning routine", "Deodorant", "Hoort bij de ochtendroutine", "Lăn khử mùi", "Một phần của thói quen buổi sáng"], ["Nail Clippers", "Personal care", "Nagelknipper", "Persoonlijke verzorging", "Bấm móng tay", "Chăm sóc cá nhân"], ["Fridge Magnet", "Stuck on something", "Koelkastmagneet", "Plakt ergens op", "Nam châm tủ lạnh", "Dính lên thứ gì đó"], ["Wi-Fi Router", "Keeps you connected", "Wifi-router", "Houdt je verbonden", "Bộ phát Wi-Fi", "Giúp bạn kết nối"], ["Sticky Notes", "Found in an office", "Plakbriefjes", "Vind je op kantoor", "Giấy ghi chú dán", "Có trong văn phòng"]], "food": [["Pizza", "Often eaten with friends", "Pizza", "Eet je vaak met vrienden", "Pizza", "Thường ăn cùng bạn bè"], ["Sushi", "Comes from Asia", "Sushi", "Komt uit Azië", "Sushi", "Đến từ châu Á"], ["Pancakes", "A breakfast thing", "Pannenkoeken", "Iets voor het ontbijt", "Bánh kếp", "Món ăn sáng"], ["Hot Chocolate", "A warm drink", "Warme chocolademelk", "Een warm drankje", "Sô-cô-la nóng", "Một đồ uống nóng"], ["Spaghetti", "An Italian dish", "Spaghetti", "Een Italiaans gerecht", "Mì Ý", "Một món ăn Ý"], ["Ice Cream", "A sweet treat", "IJs", "Een zoete traktatie", "Kem", "Một món ngọt"], ["Popcorn", "A snack", "Popcorn", "Een snack", "Bỏng ngô", "Một món ăn vặt"], ["Lemonade", "A summer drink", "Limonade", "Een zomerdrankje", "Nước chanh", "Đồ uống mùa hè"], ["Burrito", "You eat it with your hands", "Burrito", "Eet je met je handen", "Bánh burrito", "Ăn bằng tay"], ["Croissant", "Found at a bakery", "Croissant", "Vind je bij de bakker", "Bánh sừng bò", "Có ở tiệm bánh"], ["Taco", "Street food", "Taco", "Straatvoedsel", "Bánh taco", "Đồ ăn đường phố"], ["Milkshake", "Drunk through a straw", "Milkshake", "Drink je door een rietje", "Sữa lắc", "Uống bằng ống hút"], ["French Fries", "A side dish", "Patat", "Een bijgerecht", "Khoai tây chiên", "Món ăn kèm"], ["Cheesecake", "A dessert", "Cheesecake", "Een toetje", "Bánh phô mai", "Một món tráng miệng"], ["Smoothie", "Made in a blender", "Smoothie", "Gemaakt in een blender", "Sinh tố", "Làm bằng máy xay"], ["Ramen", "A bowl of something", "Ramen", "Een kom met iets erin", "Mì ramen", "Một bát gì đó"], ["Waffles", "It has a pattern", "Wafels", "Heeft een patroon", "Bánh waffle", "Có hoa văn"], ["Hamburger", "Fast food", "Hamburger", "Fastfood", "Bánh hamburger", "Đồ ăn nhanh"], ["Orange Juice", "Served at breakfast", "Sinaasappelsap", "Hoort bij het ontbijt", "Nước cam", "Uống vào bữa sáng"], ["Chocolate Bar", "Comes in a wrapper", "Chocoladereep", "Zit in een wikkel", "Thanh sô-cô-la", "Có giấy gói"], ["Avocado Toast", "A trendy brunch item", "Avocadotoast", "Een trendy brunchgerecht", "Bánh mì nướng quả bơ", "Món brunch thời thượng"], ["Bubble Tea", "A trendy drink", "Bubbelthee", "Een trendy drankje", "Trà sữa trân châu", "Đồ uống thời thượng"], ["Donut", "It has a shape", "Donut", "Heeft een bepaalde vorm", "Bánh donut", "Có hình dạng đặc biệt"], ["Cupcake", "Party food", "Cupcake", "Feesteten", "Bánh cupcake", "Đồ ăn tiệc"], ["Hot Dog", "Eaten at games", "Hotdog", "Eet je bij wedstrijden", "Bánh mì xúc xích", "Ăn khi xem thi đấu"], ["Lasagna", "Baked in layers", "Lasagne", "Gebakken in laagjes", "Mì lasagna", "Nướng thành nhiều lớp"], ["Fried Chicken", "Crispy food", "Gefrituurde kip", "Krokant eten", "Gà rán", "Đồ ăn giòn"], ["Steak", "Cooked on a grill", "Biefstuk", "Gebakken op de grill", "Bít tết", "Nướng trên vỉ"], ["Salad", "A healthy choice", "Salade", "Een gezonde keuze", "Salad rau trộn", "Một lựa chọn lành mạnh"], ["Tomato Soup", "Served in a bowl", "Tomatensoep", "Geserveerd in een kom", "Súp cà chua", "Đựng trong bát"], ["Club Sandwich", "An easy lunch", "Clubsandwich", "Een makkelijke lunch", "Bánh sandwich kẹp", "Bữa trưa đơn giản"], ["Omelette", "Made with eggs", "Omelet", "Gemaakt met eieren", "Trứng tráng", "Làm từ trứng"], ["Bacon", "A breakfast thing", "Spek", "Iets voor het ontbijt", "Thịt xông khói", "Món ăn sáng"], ["Cereal", "Eaten with a spoon", "Ontbijtgranen", "Eet je met een lepel", "Ngũ cốc ăn sáng", "Ăn bằng thìa"], ["Yogurt", "Found in the fridge", "Yoghurt", "Staat in de koelkast", "Sữa chua", "Có trong tủ lạnh"], ["Cheese", "Comes from milk", "Kaas", "Gemaakt van melk", "Phô mai", "Làm từ sữa"], ["Bread", "Found at a bakery", "Brood", "Vind je bij de bakker", "Bánh mì", "Có ở tiệm bánh"], ["Butter", "Spread on things", "Boter", "Smeer je ergens op", "Bơ sữa", "Phết lên đồ ăn"], ["Peanut Butter", "Comes in a jar", "Pindakaas", "Zit in een pot", "Bơ đậu phộng", "Đựng trong hũ"], ["Strawberry Jam", "Comes in a jar", "Aardbeienjam", "Zit in een pot", "Mứt dâu", "Đựng trong hũ"], ["Honey", "Made by nature", "Honing", "Gemaakt door de natuur", "Mật ong", "Do thiên nhiên làm ra"], ["Apple Pie", "A dessert", "Appeltaart", "Een toetje", "Bánh táo", "Một món tráng miệng"], ["Brownie", "A sweet square", "Brownie", "Een zoet vierkantje", "Bánh brownie", "Một miếng vuông ngọt"], ["Cookies", "A baked treat", "Koekjes", "Een gebakken traktatie", "Bánh quy", "Một món nướng"], ["Muffin", "Breakfast or snack", "Muffin", "Ontbijt of snack", "Bánh muffin", "Ăn sáng hoặc ăn vặt"], ["Banana", "A fruit", "Banaan", "Een fruitsoort", "Chuối", "Một loại trái cây"], ["Watermelon", "A summer fruit", "Watermeloen", "Zomerfruit", "Dưa hấu", "Trái cây mùa hè"], ["Strawberry", "A red thing", "Aardbei", "Iets roods", "Dâu tây", "Một thứ màu đỏ"], ["Pineapple", "A tropical thing", "Ananas", "Iets tropisch", "Dứa (thơm)", "Một thứ nhiệt đới"], ["Mango", "A tropical fruit", "Mango", "Een tropische vrucht", "Xoài", "Một loại quả nhiệt đới"], ["Grapes", "They come in bunches", "Druiven", "Komen in trossen", "Nho", "Mọc thành chùm"], ["Coconut", "It has a hard shell", "Kokosnoot", "Heeft een harde schil", "Dừa", "Có vỏ cứng"], ["Lemon", "Tastes sour", "Citroen", "Smaakt zuur", "Chanh vàng", "Có vị chua"], ["Carrot", "A vegetable", "Wortel", "Een groente", "Cà rốt", "Một loại rau"], ["Broccoli", "Green food", "Broccoli", "Groen eten", "Bông cải xanh", "Đồ ăn màu xanh"], ["Potato", "Grows underground", "Aardappel", "Groeit onder de grond", "Khoai tây", "Mọc dưới đất"], ["Corn on the Cob", "Eaten in summer", "Maïskolf", "Eet je in de zomer", "Bắp ngô", "Ăn vào mùa hè"], ["Mashed Potatoes", "A side dish", "Aardappelpuree", "Een bijgerecht", "Khoai tây nghiền", "Món ăn kèm"], ["Fried Rice", "A staple food", "Gebakken rijst", "Een basisvoedsel", "Cơm chiên", "Món ăn cơ bản"], ["Noodles", "Long food", "Noedels", "Lang eten", "Mì sợi", "Đồ ăn dài"], ["Dumplings", "Wrapped food", "Dumplings", "Ingepakt eten", "Há cảo", "Đồ ăn được gói"], ["Spring Rolls", "An appetizer", "Loempia's", "Een voorgerecht", "Chả giò (nem rán)", "Món khai vị"], ["Curry", "A spicy dish", "Curry", "Een pittig gerecht", "Cà ri", "Một món cay"], ["Pho", "A bowl of something", "Pho", "Een kom met iets erin", "Phở", "Một bát gì đó"], ["Paella", "Cooked in a big pan", "Paella", "Gekookt in een grote pan", "Cơm paella", "Nấu trong chảo lớn"], ["Nachos", "A shared snack", "Nacho's", "Een snack om te delen", "Bánh nachos", "Món ăn vặt để chia sẻ"], ["Guacamole", "A dip", "Guacamole", "Een dipsaus", "Sốt guacamole", "Một loại nước chấm"], ["Hummus", "A dip", "Hummus", "Een dipsaus", "Sốt hummus", "Một loại nước chấm"], ["Falafel", "Street food", "Falafel", "Straatvoedsel", "Bánh falafel", "Đồ ăn đường phố"], ["Kebab", "Street food", "Kebab", "Straatvoedsel", "Bánh mì kebab", "Đồ ăn đường phố"], ["Fish and Chips", "A classic meal", "Fish and chips", "Een klassieke maaltijd", "Cá và khoai tây chiên", "Một bữa ăn kinh điển"], ["Lobster", "From the sea", "Kreeft", "Uit de zee", "Tôm hùm", "Từ biển"], ["Shrimp", "From the sea", "Garnalen", "Uit de zee", "Tôm", "Từ biển"], ["Oysters", "From the sea", "Oesters", "Uit de zee", "Hàu", "Từ biển"], ["Meatballs", "Round food", "Gehaktballen", "Rond eten", "Thịt viên", "Đồ ăn hình tròn"], ["Mac and Cheese", "Comfort food", "Macaroni met kaas", "Troosteten", "Mì ống phô mai", "Món ăn quen thuộc ấm lòng"], ["Pretzel", "A twisted snack", "Pretzel", "Een gedraaide snack", "Bánh quy xoắn", "Món ăn vặt hình xoắn"], ["Potato Chips", "Comes in a bag", "Chips", "Zit in een zak", "Snack khoai tây", "Đựng trong túi"], ["Cotton Candy", "Found at fairs", "Suikerspin", "Vind je op de kermis", "Kẹo bông gòn", "Có ở hội chợ"], ["Lollipop", "Sweet on a stick", "Lolly", "Zoet aan een stokje", "Kẹo mút", "Ngọt trên que"], ["Gummy Bears", "A chewy sweet", "Gummibeertjes", "Een taai snoepje", "Kẹo dẻo hình gấu", "Kẹo dai"], ["Marshmallows", "Sweet and soft", "Marshmallows", "Zoet en zacht", "Kẹo marshmallow", "Ngọt và mềm"], ["Whipped Cream", "A topping", "Slagroom", "Een topping", "Kem tươi đánh bông", "Một loại topping"], ["Ketchup", "A condiment", "Ketchup", "Een saus", "Tương cà", "Một loại nước sốt"], ["Mustard", "A condiment", "Mosterd", "Een saus", "Mù tạt", "Một loại nước sốt"], ["Coffee", "A morning drink", "Koffie", "Een ochtenddrankje", "Cà phê", "Đồ uống buổi sáng"], ["Green Tea", "A warm drink", "Groene thee", "Een warm drankje", "Trà xanh", "Đồ uống nóng"], ["Espresso", "A strong drink", "Espresso", "Een sterk drankje", "Cà phê espresso", "Đồ uống đậm"], ["Cappuccino", "A café drink", "Cappuccino", "Een cafédrankje", "Cà phê cappuccino", "Đồ uống ở quán cà phê"], ["Iced Tea", "A cold drink", "IJsthee", "Een koud drankje", "Trà đá", "Đồ uống lạnh"], ["Cola", "A fizzy drink", "Cola", "Een prikdrankje", "Nước ngọt cola", "Đồ uống có ga"], ["Sparkling Water", "It has bubbles", "Bruisend water", "Heeft bubbels", "Nước có ga", "Có bọt khí"], ["Coconut Water", "A tropical drink", "Kokoswater", "Een tropisch drankje", "Nước dừa", "Đồ uống nhiệt đới"], ["Red Wine", "Served at dinner", "Rode wijn", "Hoort bij het diner", "Rượu vang đỏ", "Uống vào bữa tối"], ["Beer", "Served at a bar", "Bier", "Drink je in de kroeg", "Bia", "Uống ở quán bar"], ["Champagne", "Drunk at celebrations", "Champagne", "Drink je bij feestjes", "Rượu sâm panh", "Uống khi ăn mừng"], ["Mojito", "Served at a bar", "Mojito", "Bestel je in een bar", "Cocktail mojito", "Gọi ở quán bar"], ["Hot Sauce", "It adds heat", "Hete saus", "Maakt het pittig", "Tương ớt", "Làm món ăn cay hơn"], ["Birthday Cake", "Party food", "Verjaardagstaart", "Feesteten", "Bánh sinh nhật", "Đồ ăn tiệc"], ["Tiramisu", "An Italian dessert", "Tiramisu", "Een Italiaans toetje", "Bánh tiramisu", "Một món tráng miệng Ý"]], "places": [["Eiffel Tower", "It is in Europe", "Eiffeltoren", "Het is in Europa", "Tháp Eiffel", "Nó ở châu Âu"], ["Great Wall of China", "It is very long", "Chinese Muur", "Het is heel lang", "Vạn Lý Trường Thành", "Nó rất dài"], ["Statue of Liberty", "A symbol of a country", "Vrijheidsbeeld", "Een symbool van een land", "Tượng Nữ thần Tự do", "Biểu tượng của một quốc gia"], ["Pyramids of Giza", "Very, very old", "Piramides van Gizeh", "Heel, heel oud", "Kim tự tháp Giza", "Rất, rất cổ"], ["Times Square", "Busy at night", "Times Square", "Druk in de nacht", "Quảng trường Thời Đại", "Nhộn nhịp về đêm"], ["Big Ben", "You can hear it", "Big Ben", "Je kunt het horen", "Tháp đồng hồ Big Ben", "Bạn có thể nghe thấy nó"], ["Colosseum", "Built a long time ago", "Colosseum", "Lang geleden gebouwd", "Đấu trường La Mã", "Được xây từ rất lâu"], ["Grand Canyon", "A natural wonder", "Grand Canyon", "Een natuurwonder", "Hẻm núi Grand Canyon", "Một kỳ quan thiên nhiên"], ["Mount Everest", "It is high up", "Mount Everest", "Het is hoog", "Đỉnh Everest", "Nó ở trên cao"], ["Taj Mahal", "A beautiful building", "Taj Mahal", "Een prachtig gebouw", "Lăng Taj Mahal", "Một công trình tuyệt đẹp"], ["Sydney Opera House", "Near the water", "Sydney Opera House", "Bij het water", "Nhà hát Opera Sydney", "Gần mặt nước"], ["Niagara Falls", "Involves water", "Niagarawatervallen", "Heeft met water te maken", "Thác Niagara", "Liên quan đến nước"], ["Disneyland", "Popular with families", "Disneyland", "Populair bij gezinnen", "Disneyland", "Được các gia đình yêu thích"], ["Hollywood Sign", "Related to movies", "Hollywood-bord", "Heeft met films te maken", "Biển chữ Hollywood", "Liên quan đến phim ảnh"], ["Leaning Tower of Pisa", "It is in Italy", "Scheve Toren van Pisa", "Het is in Italië", "Tháp nghiêng Pisa", "Nó ở Ý"], ["Machu Picchu", "Up in the mountains", "Machu Picchu", "Hoog in de bergen", "Machu Picchu", "Trên núi cao"], ["Stonehenge", "Made of stone", "Stonehenge", "Gemaakt van steen", "Stonehenge", "Làm bằng đá"], ["Golden Gate Bridge", "You can cross it", "Golden Gate Bridge", "Je kunt eroverheen", "Cầu Cổng Vàng", "Bạn có thể đi qua nó"], ["Amazon Rainforest", "Very green", "Amazoneregenwoud", "Heel groen", "Rừng mưa Amazon", "Rất xanh"], ["Mount Fuji", "It is in Asia", "Berg Fuji", "Het is in Azië", "Núi Phú Sĩ", "Nó ở châu Á"], ["Venice Canals", "Involves boats", "Grachten van Venetië", "Heeft met boten te maken", "Kênh đào Venice", "Liên quan đến thuyền"], ["Sahara Desert", "It is hot there", "Sahara", "Het is daar heet", "Sa mạc Sahara", "Ở đó rất nóng"], ["Christ the Redeemer", "It overlooks a city", "Christus de Verlosser", "Kijkt uit over een stad", "Tượng Chúa Cứu Thế", "Nhìn xuống một thành phố"], ["Petra", "Carved long ago", "Petra", "Lang geleden uitgehakt", "Thành cổ Petra", "Được tạc từ lâu"], ["Angkor Wat", "An ancient temple", "Angkor Wat", "Een oude tempel", "Đền Angkor Wat", "Một ngôi đền cổ"], ["Acropolis", "Ancient ruins", "Akropolis", "Oude ruïnes", "Đền Acropolis", "Tàn tích cổ"], ["Sagrada Familia", "Still being built", "Sagrada Família", "Wordt nog steeds gebouwd", "Nhà thờ Sagrada Família", "Vẫn đang được xây"], ["Buckingham Palace", "A royal place", "Buckingham Palace", "Een koninklijke plek", "Cung điện Buckingham", "Một nơi của hoàng gia"], ["Louvre Museum", "Full of art", "Louvre", "Vol met kunst", "Bảo tàng Louvre", "Đầy tác phẩm nghệ thuật"], ["Burj Khalifa", "Very tall", "Burj Khalifa", "Heel hoog", "Tòa tháp Burj Khalifa", "Rất cao"], ["Empire State Building", "In a big city", "Empire State Building", "In een grote stad", "Tòa nhà Empire State", "Ở một thành phố lớn"], ["Central Park", "Green space in a city", "Central Park", "Groen in een stad", "Công viên Central Park", "Không gian xanh giữa thành phố"], ["Tower Bridge", "It crosses a river", "Tower Bridge", "Gaat over een rivier", "Cầu Tháp London", "Bắc qua một con sông"], ["Mount Rushmore", "It has faces", "Mount Rushmore", "Heeft gezichten", "Núi Rushmore", "Có những khuôn mặt"], ["Great Barrier Reef", "Under water", "Great Barrier Reef", "Onder water", "Rạn san hô Great Barrier", "Dưới nước"], ["Yellowstone", "A national park", "Yellowstone", "Een nationaal park", "Công viên Yellowstone", "Một công viên quốc gia"], ["Las Vegas Strip", "Bright lights", "Las Vegas Strip", "Felle lichten", "Đại lộ Las Vegas", "Ánh đèn rực rỡ"], ["The Kremlin", "A seat of power", "Kremlin", "Een machtscentrum", "Điện Kremlin", "Một trung tâm quyền lực"], ["Red Square", "A famous plaza", "Rode Plein", "Een beroemd plein", "Quảng trường Đỏ", "Một quảng trường nổi tiếng"], ["Forbidden City", "Once closed off", "Verboden Stad", "Was ooit afgesloten", "Tử Cấm Thành", "Từng cấm người ngoài vào"], ["Chichen Itza", "An ancient site", "Chichén Itzá", "Een oude plek", "Chichén Itzá", "Một di tích cổ"], ["Easter Island", "A remote island", "Paaseiland", "Een afgelegen eiland", "Đảo Phục Sinh", "Một hòn đảo xa xôi"], ["Galapagos Islands", "Unique animals live there", "Galápagoseilanden", "Er leven unieke dieren", "Quần đảo Galápagos", "Có những loài động vật độc đáo"], ["Victoria Falls", "Involves water", "Victoriawatervallen", "Heeft met water te maken", "Thác Victoria", "Liên quan đến nước"], ["Mount Kilimanjaro", "A mountain", "Kilimanjaro", "Een berg", "Núi Kilimanjaro", "Một ngọn núi"], ["Santorini", "A Greek island", "Santorini", "Een Grieks eiland", "Đảo Santorini", "Một hòn đảo Hy Lạp"], ["Maldives", "A tropical getaway", "Malediven", "Een tropische bestemming", "Quần đảo Maldives", "Điểm nghỉ dưỡng nhiệt đới"], ["Bora Bora", "A tropical getaway", "Bora Bora", "Een tropische bestemming", "Đảo Bora Bora", "Điểm nghỉ dưỡng nhiệt đới"], ["Hawaii", "A group of islands", "Hawaï", "Een groep eilanden", "Hawaii", "Một nhóm đảo"], ["The Alps", "Snowy mountains", "De Alpen", "Besneeuwde bergen", "Dãy Alps", "Núi phủ tuyết"], ["Northern Lights", "Seen in the sky", "Noorderlicht", "Zie je in de lucht", "Cực quang", "Thấy trên bầu trời"], ["Antarctica", "Very cold", "Antarctica", "Heel koud", "Châu Nam Cực", "Rất lạnh"], ["Dead Sea", "Unusual water", "Dode Zee", "Bijzonder water", "Biển Chết", "Nước khác thường"], ["Mount Vesuvius", "A volcano", "Vesuvius", "Een vulkaan", "Núi lửa Vesuvius", "Một ngọn núi lửa"], ["Neuschwanstein Castle", "A fairytale building", "Slot Neuschwanstein", "Een sprookjesgebouw", "Lâu đài Neuschwanstein", "Công trình như trong cổ tích"], ["Brandenburg Gate", "In a European capital", "Brandenburger Tor", "In een Europese hoofdstad", "Cổng Brandenburg", "Ở một thủ đô châu Âu"], ["Berlin Wall", "It divided a city", "Berlijnse Muur", "Verdeelde een stad", "Bức tường Berlin", "Từng chia cắt một thành phố"], ["Arc de Triomphe", "In a European capital", "Arc de Triomphe", "In een Europese hoofdstad", "Khải Hoàn Môn", "Ở một thủ đô châu Âu"], ["Notre-Dame", "A cathedral", "Notre-Dame", "Een kathedraal", "Nhà thờ Đức Bà Paris", "Một nhà thờ lớn"], ["Vatican City", "A very small country", "Vaticaanstad", "Een heel klein land", "Thành Vatican", "Một quốc gia rất nhỏ"], ["Trevi Fountain", "Involves water", "Trevifontein", "Heeft met water te maken", "Đài phun nước Trevi", "Liên quan đến nước"], ["Alhambra", "A palace", "Alhambra", "Een paleis", "Cung điện Alhambra", "Một cung điện"], ["Matterhorn", "A mountain", "Matterhorn", "Een berg", "Núi Matterhorn", "Một ngọn núi"], ["Hagia Sophia", "A historic building", "Hagia Sophia", "Een historisch gebouw", "Hagia Sophia", "Một công trình lịch sử"], ["Blue Mosque", "A place of worship", "Blauwe Moskee", "Een gebedshuis", "Nhà thờ Hồi giáo Xanh", "Một nơi thờ phụng"], ["Golden Temple", "A place of worship", "Gouden Tempel", "Een gebedshuis", "Đền Vàng", "Một nơi thờ phụng"], ["Ha Long Bay", "Islands in the water", "Ha Long-baai", "Eilanden in het water", "Vịnh Hạ Long", "Những hòn đảo trên mặt nước"], ["Marina Bay Sands", "A rooftop pool", "Marina Bay Sands", "Een zwembad op het dak", "Marina Bay Sands", "Hồ bơi trên sân thượng"], ["Shibuya Crossing", "A busy place", "Shibuya-kruispunt", "Een drukke plek", "Ngã tư Shibuya", "Một nơi đông đúc"], ["Tokyo Tower", "A tall structure", "Tokyo Tower", "Een hoog bouwwerk", "Tháp Tokyo", "Một công trình cao"], ["Victoria Harbour", "A city by the water", "Victoria Harbour", "Een stad aan het water", "Cảng Victoria", "Thành phố bên mặt nước"], ["Bali", "An island getaway", "Bali", "Een eilandbestemming", "Đảo Bali", "Một hòn đảo nghỉ dưỡng"], ["Table Mountain", "It has a flat top", "Tafelberg", "Heeft een platte top", "Núi Bàn", "Có đỉnh bằng phẳng"], ["Uluru", "A giant rock", "Uluru", "Een gigantische rots", "Đá Uluru", "Một tảng đá khổng lồ"], ["Banff National Park", "Mountains and lakes", "Nationaal park Banff", "Bergen en meren", "Vườn quốc gia Banff", "Núi và hồ"], ["CN Tower", "A tall structure", "CN Tower", "Een hoog bouwwerk", "Tháp CN", "Một công trình cao"], ["Space Needle", "A tall structure", "Space Needle", "Een hoog bouwwerk", "Tháp Space Needle", "Một công trình cao"], ["Gateway Arch", "Shaped like a curve", "Gateway Arch", "Heeft een gebogen vorm", "Cổng vòm Gateway", "Có hình vòng cung"], ["White House", "A seat of power", "Witte Huis", "Een machtscentrum", "Nhà Trắng", "Một trung tâm quyền lực"], ["Alcatraz", "An island", "Alcatraz", "Een eiland", "Đảo Alcatraz", "Một hòn đảo"], ["Route 66", "A long road", "Route 66", "Een lange weg", "Đường Route 66", "Một con đường dài"], ["Wall Street", "Related to money", "Wall Street", "Heeft met geld te maken", "Phố Wall", "Liên quan đến tiền"], ["Broadway", "Related to shows", "Broadway", "Heeft met shows te maken", "Broadway", "Liên quan đến các buổi biểu diễn"], ["Hollywood Walk of Fame", "Stars on the ground", "Hollywood Walk of Fame", "Sterren op de grond", "Đại lộ Danh vọng Hollywood", "Những ngôi sao trên mặt đất"], ["Panama Canal", "It connects water", "Panamakanaal", "Verbindt water", "Kênh đào Panama", "Nối liền các vùng nước"], ["Suez Canal", "It connects water", "Suezkanaal", "Verbindt water", "Kênh đào Suez", "Nối liền các vùng nước"], ["Amsterdam Canals", "Involves boats", "Amsterdamse grachten", "Heeft met boten te maken", "Kênh đào Amsterdam", "Liên quan đến thuyền"], ["Keukenhof", "Full of flowers", "Keukenhof", "Vol met bloemen", "Vườn hoa Keukenhof", "Đầy hoa"], ["Kinderdijk Windmills", "Things that turn", "Molens van Kinderdijk", "Dingen die draaien", "Cối xay gió Kinderdijk", "Những thứ quay tròn"], ["Atomium", "Shaped like science", "Atomium", "Gevormd als wetenschap", "Tượng đài Atomium", "Có hình dạng khoa học"], ["Iguazu Falls", "Involves water", "Iguazúwatervallen", "Heeft met water te maken", "Thác Iguazu", "Liên quan đến nước"], ["Death Valley", "Very hot", "Death Valley", "Heel heet", "Thung lũng Chết", "Rất nóng"], ["Everglades", "Swampy", "Everglades", "Moerassig", "Đầm lầy Everglades", "Nhiều đầm lầy"], ["Loch Ness", "A legend lives there", "Loch Ness", "Daar woont een legende", "Hồ Loch Ness", "Có một truyền thuyết sống ở đó"], ["Cliffs of Moher", "Near the sea", "Cliffs of Moher", "Bij de zee", "Vách đá Moher", "Gần biển"], ["Edinburgh Castle", "On a hill", "Kasteel van Edinburgh", "Op een heuvel", "Lâu đài Edinburgh", "Trên một ngọn đồi"], ["Mont Saint-Michel", "Surrounded by the tide", "Mont Saint-Michel", "Omringd door het getij", "Mont Saint-Michel", "Được bao quanh bởi thủy triều"], ["Cappadocia", "Hot air balloons", "Cappadocië", "Heteluchtballonnen", "Cappadocia", "Khinh khí cầu"], ["Pompeii", "Buried long ago", "Pompeii", "Lang geleden bedolven", "Thành cổ Pompeii", "Bị chôn vùi từ lâu"], ["Abu Simbel", "Ancient carvings", "Abu Simbel", "Oude beeldhouwwerken", "Đền Abu Simbel", "Những bức chạm khắc cổ"]]};
+const CATEGORIES = {
+  daily:  { icon:"house",    words:WORDS.daily },
+  food:   { icon:"utensils", words:WORDS.food },
+  places: { icon:"landmark", words:WORDS.places }
+};
+const AV_COLORS = ["#3dff9a","#8b5cf6","#ff2e55","#38bdf8","#facc15","#fb923c","#f472b6","#a3e635","#22d3ee","#c084fc"];
+
+/* ---------- Translations ---------- */
+const LANGS = { en:"English", nl:"Nederlands" };
+const s_ = (n,a,b) => n===1?a:b;
+const T = {
+ en:{
+  eyebrow:"Party game · 2–10 players",
+  tagline:"Everyone gets the secret word. Except the impostor. Give a clue, don't give it away.",
+  play:"Play", leaderboard:"Leaderboard", options:"Options", back:"Back", close:"Close",
+  registeredCount:n=>`${n} registered ${s_(n,"player","players")}`,
+  chips:["One phone","300 secret words","Hold to peek"],
+  setupSub:"Setup", whosPlaying:"Who's playing?", players:"Players", playersHint:"2 to 10 people, one phone",
+  selectRegistered:"Select registered players", names:"Names", playerN:i=>`Player ${i}`,
+  setupNote:"Every player must be registered in the player database. Pick saved players, or type a new name and register it when you continue.",
+  cont:"Continue", errEmpty:"Enter a name for every player.", errDup:"Each player needs a different name.", notRegistered:"Not registered",
+  configure:"Configure", matchSettings:"Match settings", impostors:"Impostors",
+  impHint:(n,m)=>`${n} players allows up to <b class="text-[color:var(--imp)]">${m} ${s_(m,"impostor","impostors")}</b> for a fair game.`,
+  wordCategory:"Word category", wordsCount:n=>`${n} words`,
+  cat_daily:"Day-to-day things", cat_food:"Food & Drinks", cat_places:"Famous Places",
+  gameEndsBy:"Game ends by", rounds:"Rounds", timer:"Timer", discussionTime:"Discussion time", min:"min",
+  timerNote:"Players take turns saying related words until the clock hits zero, then everyone votes.",
+  numRounds:"Number of rounds",
+  roundsNote:(r,n)=>`One round = every player says one synonym or related word, turn by turn. So <b class="text-[color:var(--ink)]">${r} ${s_(r,"round","rounds")}</b> means each player says <b class="text-[color:var(--ink)]">${r} ${s_(r,"word","words")}</b> in total (${r*n} clues around the table).`,
+  deal:"Deal the cards",
+  cardOf:(i,t)=>`Card ${i} of ${t}`, passTo:"Pass the phone to", lookAway:p=>`Everyone else, look away. Only ${p} may see the next screen.`,
+  iam:p=>`I'm ${p}`, cardTitle:p=>`${p}'s card`, holdHint:"Press and hold the card to look. Let go to hide it.",
+  holdToReveal:"HOLD TO REVEAL", keepFinger:"Keep your finger down", gotIt:"Got it, hide & pass on", revealAria:"Press and hold to reveal your card",
+  yourRole:"Your role", youAreImp:"You are the IMPOSTOR!", hint:"Hint", blendIn:"Blend in. Don't get caught.",
+  crewSecret:"Crewmate · secret word", findWho:"Find who doesn't know it.",
+  allDealt:"All cards dealt", everyonesIn:"Everyone's in.", howToPlay:"How to play",
+  howText:"Go around the circle. Each player says one word related to the secret word. Be vague enough to fool the impostor, clear enough to prove you know it.",
+  starts:p=>`<b class="text-[color:var(--ink)]">${p}</b> starts.`, youHave:m=>`You have <b class="text-[color:var(--ink)]">${m} min</b>.`,
+  playRounds:r=>`Play <b class="text-[color:var(--ink)]">${r} ${s_(r,"round","rounds")}</b>.`, startGame:"START GAME",
+  liveMatch:"Live match", clockTicking:"Clock is ticking", sayWords:"Say your words", discussing:"Discussing", paused:"Paused",
+  round:"Round", roundLine:(r,R)=>`Round ${r}/${R} · Everyone names <b>1</b> related word`,
+  pause:"Pause", resume:"Resume", plus30:"+30 sec", endVote:"End Game & Vote", roundDone:"Round Completed", finalRoundDone:"Final Round Completed",
+  speakingOrder:"Speaking order", impAmong:n=>`${n} ${s_(n,"impostor is","impostors are")} among you.`, timeUp:"TIME!",
+  voting:"Voting", whosSus:"Who's sus?",
+  votePick:n=>`Discuss, then pick the <b class="text-[color:var(--imp)]">${n} ${s_(n,"player","players")}</b> you think ${s_(n,"is the impostor","are impostors")}.`,
+  reveal:(v,n)=>`Reveal Roles · ${v}/${n}`,
+  crewWins:"Crew wins!", impWins:"Impostors win!", everyCaught:"Every impostor was caught.",
+  gotAway:n=>`The crew voted wrong. The ${s_(n,"impostor","impostors")} got away.`,
+  secretWord:"Secret word", rolesRevealed:"Roles revealed", impostor:"Impostor", crewmate:"Crewmate", votedOut:"voted out",
+  win:"+1 WIN", loss:"LOSS", playAgain:"Play Again", editPlayers:"Edit players", home:"Home",
+  saving:"Saving scores to the player database…", saved:"Scores saved to the player database",
+  failed:"Couldn't reach the database. Scores are kept on this phone.", local:"Scores saved on this phone",
+  noMatches:"No players yet. Register players to fill the board.",
+  dbSynced:"Player database · synced", dbView:"Player database · view only", dbLocal:"Saved on this phone",
+  winsPct:r=>`${r}% wins`, resetAll:"Reset all scores", resetConfirm:"Tap again to erase every player and score", erasing:"Erasing…",
+  swipeHint:"Swipe a name left to delete the player.", del:"Delete", confirmDel:"Sure?", deleteFailed:"Couldn't delete that player. Try again.",
+  registerTitle:n=>`Register new ${s_(n,"player","players")}`,
+  registerText:"Everyone who plays needs a profile so their wins and losses are tracked. Check the spelling: a typo creates a separate player.",
+  newProfile:"New profile · 0 wins · 0 losses", registerGo:n=>`Register ${n} & continue`, editNames:"Edit names",
+  registering:"Registering…", tryAgain:"Try again",
+  regErrView:"You can view this game but not save players. Ask the owner for Contributor access.",
+  regErrNet:"Couldn't reach the player database. Check your connection and try again.",
+  registeredPlayers:"Registered players", tapUpTo:"tap up to 10", registerPlaceholder:"Register a new player", add:"Add",
+  typeName:"Type a name first.", couldntSave:"Couldn't save this player. Try again.", searchPlayers:"Search players",
+  noRegistered:"No registered players yet. Add your first player above.", noMatch:q=>`No player matches “${q}”.`,
+  usePlayers:n=>`Use ${n} ${s_(n,"player","players")}`, plusOneNew:" + 1 new", selectPlayers:"Select players",
+  wl:(w,l)=>`${w} wins · ${l} losses`,
+  language:"Language", langNote:"Changes the menus and the secret words.", optionsTitle:"Options", done:"Done",
+  viTitle:"Vietnamese translation", viNote:"Shows Vietnamese under the secret words, hints and key instructions, so Vietnamese friends can play along.", extras:"Extra language"
+ },
+ nl:{
+  eyebrow:"Partyspel · 2–10 spelers",
+  tagline:"Iedereen krijgt het geheime woord. Behalve de bedrieger. Geef een hint, maar verraad niks.",
+  play:"Spelen", leaderboard:"Ranglijst", options:"Opties", back:"Terug", close:"Sluiten",
+  registeredCount:n=>`${n} ${s_(n,"geregistreerde speler","geregistreerde spelers")}`,
+  chips:["Eén telefoon","300 geheime woorden","Vasthouden om te kijken"],
+  setupSub:"Instellen", whosPlaying:"Wie doet er mee?", players:"Spelers", playersHint:"2 tot 10 mensen, één telefoon",
+  selectRegistered:"Kies geregistreerde spelers", names:"Namen", playerN:i=>`Speler ${i}`,
+  setupNote:"Elke speler moet geregistreerd zijn in de spelersdatabase. Kies opgeslagen spelers, of typ een nieuwe naam en registreer die bij Verder.",
+  cont:"Verder", errEmpty:"Vul voor elke speler een naam in.", errDup:"Elke speler heeft een andere naam nodig.", notRegistered:"Niet geregistreerd",
+  configure:"Instellingen", matchSettings:"Spelinstellingen", impostors:"Bedriegers",
+  impHint:(n,m)=>`Met ${n} spelers zijn maximaal <b class="text-[color:var(--imp)]">${m} ${s_(m,"bedrieger","bedriegers")}</b> eerlijk.`,
+  wordCategory:"Woordcategorie", wordsCount:n=>`${n} woorden`,
+  cat_daily:"Dagelijkse dingen", cat_food:"Eten & drinken", cat_places:"Beroemde plekken",
+  gameEndsBy:"Spel eindigt na", rounds:"Rondes", timer:"Timer", discussionTime:"Discussietijd", min:"min",
+  timerNote:"Spelers noemen om de beurt een verwant woord tot de tijd op is. Daarna stemt iedereen.",
+  numRounds:"Aantal rondes",
+  roundsNote:(r,n)=>`Eén ronde = elke speler noemt om de beurt één synoniem of verwant woord. Dus <b class="text-[color:var(--ink)]">${r} ${s_(r,"ronde","rondes")}</b> betekent dat elke speler in totaal <b class="text-[color:var(--ink)]">${r} ${s_(r,"woord","woorden")}</b> noemt (${r*n} hints rond de tafel).`,
+  deal:"Kaarten uitdelen",
+  cardOf:(i,t)=>`Kaart ${i} van ${t}`, passTo:"Geef de telefoon aan", lookAway:p=>`De rest kijkt weg. Alleen ${p} mag het volgende scherm zien.`,
+  iam:p=>`Ik ben ${p}`, cardTitle:p=>`Kaart van ${p}`, holdHint:"Houd de kaart ingedrukt om te kijken. Laat los om hem te verbergen.",
+  holdToReveal:"HOUD VAST OM TE KIJKEN", keepFinger:"Houd je vinger erop", gotIt:"Gezien, verbergen & doorgeven", revealAria:"Houd ingedrukt om je kaart te zien",
+  yourRole:"Jouw rol", youAreImp:"Jij bent de BEDRIEGER!", hint:"Hint", blendIn:"Val niet op. Laat je niet pakken.",
+  crewSecret:"Bemanning · geheim woord", findWho:"Vind wie het niet weet.",
+  allDealt:"Alle kaarten gedeeld", everyonesIn:"Iedereen is er klaar voor.", howToPlay:"Zo speel je",
+  howText:"Ga de kring rond. Elke speler noemt één woord dat met het geheime woord te maken heeft. Vaag genoeg om de bedrieger te misleiden, duidelijk genoeg om te laten zien dat je het weet.",
+  starts:p=>`<b class="text-[color:var(--ink)]">${p}</b> begint.`, youHave:m=>`Jullie hebben <b class="text-[color:var(--ink)]">${m} min</b>.`,
+  playRounds:r=>`Speel <b class="text-[color:var(--ink)]">${r} ${s_(r,"ronde","rondes")}</b>.`, startGame:"START SPEL",
+  liveMatch:"Bezig", clockTicking:"De klok tikt", sayWords:"Noem je woorden", discussing:"Discussie", paused:"Gepauzeerd",
+  round:"Ronde", roundLine:(r,R)=>`Ronde ${r}/${R} · Iedereen noemt <b>1</b> verwant woord`,
+  pause:"Pauze", resume:"Hervatten", plus30:"+30 sec", endVote:"Stoppen & stemmen", roundDone:"Ronde klaar", finalRoundDone:"Laatste ronde klaar",
+  speakingOrder:"Volgorde", impAmong:n=>`Er ${s_(n,"zit 1 bedrieger","zitten "+n+" bedriegers")} tussen jullie.`, timeUp:"TIJD!",
+  voting:"Stemmen", whosSus:"Wie is verdacht?",
+  votePick:n=>`Overleg en kies de <b class="text-[color:var(--imp)]">${n} ${s_(n,"speler","spelers")}</b> die volgens jullie ${s_(n,"de bedrieger is","bedriegers zijn")}.`,
+  reveal:(v,n)=>`Rollen onthullen · ${v}/${n}`,
+  crewWins:"Bemanning wint!", impWins:"Bedriegers winnen!", everyCaught:"Elke bedrieger is ontmaskerd.",
+  gotAway:n=>`De bemanning stemde fout. ${s_(n,"De bedrieger is","De bedriegers zijn")} ontsnapt.`,
+  secretWord:"Geheim woord", rolesRevealed:"Rollen onthuld", impostor:"Bedrieger", crewmate:"Bemanning", votedOut:"weggestemd",
+  win:"+1 WINST", loss:"VERLIES", playAgain:"Opnieuw spelen", editPlayers:"Spelers wijzigen", home:"Start",
+  saving:"Scores opslaan in de spelersdatabase…", saved:"Scores opgeslagen in de spelersdatabase",
+  failed:"Database niet bereikbaar. Scores staan op deze telefoon.", local:"Scores opgeslagen op deze telefoon",
+  noMatches:"Nog geen spelers. Registreer spelers om de lijst te vullen.",
+  dbSynced:"Spelersdatabase · gesynchroniseerd", dbView:"Spelersdatabase · alleen bekijken", dbLocal:"Opgeslagen op deze telefoon",
+  winsPct:r=>`${r}% gewonnen`, resetAll:"Alle scores wissen", resetConfirm:"Tik nog eens om alle spelers en scores te wissen", erasing:"Wissen…",
+  swipeHint:"Veeg een naam naar links om de speler te verwijderen.", del:"Verwijder", confirmDel:"Zeker?", deleteFailed:"Kon deze speler niet verwijderen. Probeer het opnieuw.",
+  registerTitle:n=>`${s_(n,"Nieuwe speler","Nieuwe spelers")} registreren`,
+  registerText:"Iedereen die meedoet heeft een profiel nodig, zodat winst en verlies worden bijgehouden. Let op de spelling: een typfout maakt een aparte speler.",
+  newProfile:"Nieuw profiel · 0 gewonnen · 0 verloren", registerGo:n=>`${n} registreren & verder`, editNames:"Namen aanpassen",
+  registering:"Registreren…", tryAgain:"Opnieuw proberen",
+  regErrView:"Je kunt dit spel bekijken maar geen spelers opslaan. Vraag de eigenaar om toegang als Bijdrager.",
+  regErrNet:"Spelersdatabase niet bereikbaar. Controleer je verbinding en probeer opnieuw.",
+  registeredPlayers:"Geregistreerde spelers", tapUpTo:"kies er maximaal 10", registerPlaceholder:"Registreer een nieuwe speler", add:"Toevoegen",
+  typeName:"Typ eerst een naam.", couldntSave:"Kon deze speler niet opslaan. Probeer opnieuw.", searchPlayers:"Zoek spelers",
+  noRegistered:"Nog geen geregistreerde spelers. Voeg hierboven je eerste speler toe.", noMatch:q=>`Geen speler gevonden voor “${q}”.`,
+  usePlayers:n=>`${n} ${s_(n,"speler","spelers")} gebruiken`, plusOneNew:" + 1 nieuw", selectPlayers:"Kies spelers",
+  wl:(w,l)=>`${w} gewonnen · ${l} verloren`,
+  language:"Taal", langNote:"Verandert de menu's en de geheime woorden.", optionsTitle:"Opties", done:"Klaar",
+  viTitle:"Vietnamese vertaling", viNote:"Toont Vietnamees onder de geheime woorden, hints en belangrijkste instructies, zodat Vietnamese vrienden mee kunnen spelen.", extras:"Extra taal"
+ }
+};
+/* Vietnamese helper lines, shown under the main text when the option is on */
+const VI = {
+  passTo:"Đưa điện thoại cho", holdHint:"Nhấn giữ thẻ để xem. Thả tay ra để ẩn.",
+  yourRole:"Vai trò của bạn", youAreImp:"Bạn là KẺ GIẢ MẠO!", hint:"Gợi ý", blendIn:"Hãy hòa nhập. Đừng để bị bắt.",
+  crewSecret:"Phi hành đoàn · từ bí mật", findWho:"Tìm ra ai không biết từ này.",
+  howToPlay:"Cách chơi",
+  howText:"Lần lượt theo vòng tròn, mỗi người nói một từ liên quan đến từ bí mật. Đủ mơ hồ để đánh lừa kẻ giả mạo, đủ rõ để chứng minh bạn biết từ đó.",
+  roundLine:"Mỗi người nói 1 từ liên quan", timerLine:"Lần lượt nói từ liên quan cho đến khi hết giờ.",
+  votePick:n=>n===1?"Thảo luận, rồi chọn người bạn nghĩ là kẻ giả mạo.":`Thảo luận, rồi chọn ${n} người bạn nghĩ là kẻ giả mạo.`,
+  crewWins:"Phi hành đoàn thắng!", impWins:"Kẻ giả mạo thắng!", secretWord:"Từ bí mật"
+};
+const V = (k,cls="",...a) => { if(!S.vi) return ""; const v=VI[k]; return `<div class="vi ${cls}" lang="vi">${typeof v==="function"?v(...a):v}</div>`; };
+const Vt = (txt,cls="") => S.vi&&txt?`<div class="vi ${cls}" lang="vi">${esc(txt)}</div>`:"";
+function t(k,...a){ const d=T[S.lang]||T.en; const v=(k in d)?d[k]:T.en[k]; return typeof v==="function"?v(...a):v; }
+
+/* ---------- State ---------- */
+const S = {
+  screen:"home", lang:"en", vi:false, sheet:null,
+  count:4, names:["","","","","","","","","",""],
+  impostors:1, category:"daily", format:"rounds", minutes:3, rounds:3,
+  players:[], impSet:new Set(), wordIdx:0, peekIdx:0, peeked:false, phase:"pass",
+  round:1, timeLeft:0, total:0, timerId:null, running:false, starter:0,
+  votes:new Set(), result:null, saveState:"local",
+  board:{}, dbStatus:"local", pick:new Set(), pickQ:""
+};
+try{ const l=localStorage.getItem("hi-lang"); if(l&&T[l]) S.lang=l; S.vi=localStorage.getItem("hi-vi")==="1"; }catch(e){}
+document.documentElement.lang=S.lang;
+const curWord = () => { const w=CATEGORIES[S.category].words[S.wordIdx];
+  return Object.assign(S.lang==="nl"?{word:w[2],hint:w[3]}:{word:w[0],hint:w[1]},{viWord:w[4],viHint:w[5]}); };
+
+/* ---------- Helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const icon = (n,c="w-5 h-5") => `<i data-lucide="${n}" class="${c}"></i>`;
+const color = name => { let h=0; for(const ch of String(name)) h=(h*31+ch.charCodeAt(0))>>>0; return AV_COLORS[h%AV_COLORS.length]; };
+const avatar = name => `<div class="avatar" style="background:${color(name)}">${esc(String(name).trim()[0]||"?").toUpperCase()}</div>`;
+const maxImp = n => n<=4?1 : n<=7?2 : 3;
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function haptic(ms=12){ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} }
+const keyOf = n => String(n).trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60) || "player";
+
+/* ---------- Player database ----------
+   players/<key> = {name, wins, losses, updatedAt}. Falls back to this device when the db is unavailable. */
+let DB=null;
+function loadLocal(){ try{ const b=JSON.parse(localStorage.getItem("hi-board2")||"null"); if(b&&typeof b==="object") return b; }catch(e){} return {}; }
+S.board=loadLocal();
+function saveBoard(){ try{ localStorage.setItem("hi-board2", JSON.stringify(S.board)); }catch(e){} }
+/* Writes in flight. A snapshot can arrive between writes and still carry old values for players
+   not yet saved; PENDING keeps those local values on top until each write is confirmed. */
+const PENDING={};
+async function writeRecord(key, rec){
+  rec = rec || S.board[key]; if(!rec) return true;
+  rec = {name:rec.name, wins:rec.wins|0, losses:rec.losses|0};
+  S.board[key]=rec;
+  if(!DB) return true;
+  PENDING[key]=rec;
+  const body={...rec, updatedAt:new Date().toISOString()};
+  let ok=false;
+  try{ await DB.doc("players/"+key).set(body); ok=true; }
+  catch(e){
+    if(e&&e.code==="unavailable"){ await new Promise(res=>setTimeout(res,400+Math.random()*600)); try{ await DB.doc("players/"+key).set(body); ok=true; }catch(_){} }
+    else if(e&&(e.code==="invalid_argument"||e.code==="revoked")) S.dbStatus="readonly";
+  }
+  if(PENDING[key]===rec) delete PENDING[key];
+  return ok;
+}
+async function logMatch(entry){
+  if(!DB) return;
+  try{ await DB.collection("matches").add(entry); }catch(e){}
+}
+async function connectDB(){
+  if(window.HI_NATIVE_APP) return;
+  let tries=0; while(!(window.claude&&window.claude.use) && tries++<20) await new Promise(r=>setTimeout(r,150));
+  if(!(window.claude&&window.claude.use)) return;
+  let db=null; try{ db=await window.claude.use("db"); }catch(e){} if(!db) return;
+  DB=db; S.dbStatus="live"; let migrated=false;
+  db.collection("players").onSnapshot(async snap=>{
+    if(snap.empty && !snap.metadata.fromCache && !migrated && Object.keys(S.board).length){
+      migrated=true; await Promise.all(Object.keys(S.board).map(k=>writeRecord(k,S.board[k]))); return; }
+    migrated=true;
+    const b={}; snap.docs.forEach(d=>{ const x=d.data()||{}; if(x.name) b[d.id]={name:String(x.name),wins:x.wins|0,losses:x.losses|0}; });
+    for(const k in PENDING) b[k]=PENDING[k];
+    S.board=b; saveBoard(); onBoardChange();
+  }, ()=>{ S.dbStatus="local"; DB=null; onBoardChange(); });
+}
+function onBoardChange(){
+  document.querySelectorAll("[data-rec]").forEach(el=>{ el.innerHTML=recBadge(S.names[+el.dataset.rec]); });
+  if(S.sheet==="board") openBoard(true); else if(S.sheet==="pick") openPicker(true);
+  else if((S.screen==="setup"||S.screen==="home") && !(document.activeElement && document.activeElement.tagName==="INPUT")) render();
+}
+function recBadge(name){
+  if(!name||!name.trim()) return "";
+  const r=S.board[keyOf(name)];
+  if(r) return `<span style="color:var(--crew)">${r.wins}W</span> <span style="color:var(--imp)">${r.losses}L</span>`;
+  return `<span class="px-2 py-0.5 rounded-full" style="background:#ff2e5522;color:#ff8da1">${t("notRegistered")}</span>`;
+}
+async function registerPlayers(names){
+  const keys=[];
+  for(const n of names){ const k=keyOf(n); if(!S.board[k]) S.board[k]={name:n.trim(),wins:0,losses:0}; keys.push(k); }
+  saveBoard(); let ok=true;
+  const res=await Promise.all(keys.map(k=>writeRecord(k,S.board[k])));
+  return res.every(Boolean);
+}
+async function deletePlayer(k){
+  delete PENDING[k];
+  if(DB){ try{ await DB.doc("players/"+k).delete(); }catch(e){ if(e&&(e.code==="invalid_argument"||e.code==="revoked")) S.dbStatus="readonly"; return false; } }
+  delete S.board[k]; saveBoard(); return true;
+}
+
+/* ---------- Audio (starts on user gesture) ---------- */
+let actx=null;
+function audio(){ try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==="suspended") actx.resume(); }catch(e){} return actx; }
+function beep(freq=880, dur=.15, when=0, type="square"){
+  const a=audio(); if(!a) return;
+  const o=a.createOscillator(), g=a.createGain(); o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(.0001,a.currentTime+when); g.gain.exponentialRampToValueAtTime(.25,a.currentTime+when+.01);
+  g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+when+dur);
+  o.connect(g).connect(a.destination); o.start(a.currentTime+when); o.stop(a.currentTime+when+dur+.05);
+}
+function alarmSound(){ for(let i=0;i<6;i++) beep(i%2?660:990,.18,i*.22); }
+
+/* ---------- Render router ---------- */
+function go(screen){ S.screen=screen; render(); window.scrollTo(0,0); }
+function render(){
+  const v = { home:vHome, setup:vSetup, config:vConfig, pass:vPass, ready:vReady, play:vPlay, vote:vVote, results:vResults }[S.screen]();
+  $("#app").innerHTML = v; bind(); lucide.createIcons();
+}
+function header(title, sub, back){
+  return `<header class="flex items-center gap-3 pt-3 pb-2">
+    ${back?`<button data-act="${back}" aria-label="${t("back")}" class="w-10 h-10 -ml-2 grid place-items-center rounded-full text-[color:var(--violet)]">${icon("chevron-left","w-7 h-7")}</button>`:""}
+    <div class="min-w-0 flex-1">
+      <div class="label">${sub}</div>
+      <h1 class="font-display text-[28px] leading-tight font-bold" style="text-wrap:balance">${title}</h1>
+    </div>
+    <button data-act="board" aria-label="${t("leaderboard")}" class="w-11 h-11 grid place-items-center rounded-full">${icon("trophy","w-5 h-5 text-[color:var(--crew)]")}</button>
+  </header>`;
+}
+
+/* ---------- 0. Home ---------- */
+function vHome(){
+  const n=Object.keys(S.board).length;
+  return `<section class="screen home">
+    <div class="flex items-center justify-between pt-4">
+      <span class="label">${t("eyebrow")}</span>
+      <button data-act="options" class="lang-pill" aria-label="${t("options")}">${icon("languages","w-4 h-4")} ${S.lang.toUpperCase()}${S.vi?" + VI":""}</button>
+    </div>
+    <div class="flex-1 flex flex-col justify-center gap-7 py-6">
+      <div class="fan" aria-hidden="true">
+        <div class="fc fc-l"></div>
+        <div class="fc fc-r"><div class="fc-face">${icon("skull","w-10 h-10")}</div></div>
+        <div class="fc fc-m"><div class="fc-emblem">${icon("eye-off","w-7 h-7")}</div></div>
+      </div>
+      <div>
+        <h1 class="font-display font-bold hero-title"><span>Hidden</span><span class="imp-word">Impostor</span></h1>
+        <p class="text-[17px] leading-relaxed mt-3 max-w-[34ch]" style="color:var(--mute)">${t("tagline")}</p>
+      </div>
+      <div class="flex flex-wrap gap-2">${t("chips").map(c=>`<span class="chip">${c}</span>`).join("")}</div>
+    </div>
+    <div class="dock">
+      <button class="btn btn-crew font-display tracking-wider text-[20px]" data-act="toSetup">${icon("play","w-6 h-6")} ${t("play").toUpperCase()}</button>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="btn btn-ghost" data-act="board">${icon("trophy","w-5 h-5 text-[color:var(--crew)]")} ${t("leaderboard")}</button>
+        <button class="btn btn-ghost" data-act="options">${icon("settings-2","w-5 h-5 text-[color:var(--violet)]")} ${t("options")}</button>
+      </div>
+      <p class="text-center text-sm" style="color:var(--mute)">${t("registeredCount",n)}</p>
+    </div>
+  </section>`;
+}
+
+/* ---------- 1. Setup ---------- */
+function vSetup(){
+  const inputs = Array.from({length:S.count},(_,i)=>`
+    <label class="flex items-center gap-3 px-4 py-2.5 ${i?"border-t border-[color:var(--line)]":""}">
+      ${avatar(S.names[i]||String(i+1))}
+      <input type="text" id="name-${i}" data-name="${i}" maxlength="14" autocomplete="off" placeholder="${t("playerN",i+1)}" value="${esc(S.names[i]||"")}">
+      <span data-rec="${i}" class="text-xs font-semibold tnum whitespace-nowrap">${recBadge(S.names[i])}</span>
+    </label>`).join("");
+  const known=Object.keys(S.board).length;
+  return `<section class="screen">
+    ${header(t("whosPlaying"),"Hidden Impostor · "+t("setupSub"),"toHome")}
+    <div class="scroll">
+      <div class="group p-4 flex items-center justify-between gap-3">
+        <div class="min-w-0"><div class="font-semibold text-[17px]">${t("players")}</div><div class="text-sm text-[color:var(--mute)]">${t("playersHint")}</div></div>
+        <div class="stepper flex items-center gap-3">
+          <button data-act="minus" aria-label="-" ${S.count<=2?"disabled":""}>${icon("minus")}</button>
+          <span class="font-display text-3xl w-8 text-center tnum">${S.count}</span>
+          <button data-act="plus" aria-label="+" ${S.count>=10?"disabled":""}>${icon("plus")}</button>
+        </div>
+      </div>
+      <button class="btn btn-ghost" data-act="pick">${icon("users-round")} ${t("selectRegistered")}${known?` <span class="text-sm font-semibold px-2 py-0.5 rounded-full" style="background:var(--violet);color:#fff">${known}</span>`:""}</button>
+      <div class="label px-1">${t("names")}</div>
+      <div class="group overflow-hidden">${inputs}</div>
+      <p class="text-sm text-[color:var(--mute)] px-1">${t("setupNote")}</p>
+    </div>
+    <div class="dock"><button class="btn btn-primary" data-act="toConfig">${t("cont")} ${icon("arrow-right")}</button>
+    <p id="err" class="text-center text-sm text-[color:var(--imp)] min-h-[20px]"></p></div>
+  </section>`;
+}
+
+/* ---------- 2. Config ---------- */
+function vConfig(){
+  const n=S.players.length, max=maxImp(n); if(S.impostors>max) S.impostors=max;
+  const impBtns=[1,2,3].map(k=>`<button data-imp="${k}" aria-pressed="${S.impostors===k}" ${k>max?"disabled":""}>${k}</button>`).join("");
+  const cats=Object.entries(CATEGORIES).map(([k,c],i)=>`
+    <button data-cat="${k}" class="flex items-center gap-3 px-4 py-3.5 w-full text-left ${i?"border-t border-[color:var(--line)]":""}">
+      <span class="w-9 h-9 rounded-xl grid place-items-center" style="background:var(--deck-2)">${icon(c.icon,"w-5 h-5 text-[color:var(--violet)]")}</span>
+      <span class="flex-1"><span class="block font-semibold">${t("cat_"+k)}</span><span class="text-sm text-[color:var(--mute)]">${t("wordsCount",c.words.length)}</span></span>
+      <span class="w-6 h-6 rounded-full grid place-items-center ${S.category===k?"bg-[color:var(--violet)]":"border-2 border-[color:var(--line)]"}">${S.category===k?icon("check","w-4 h-4 text-white"):""}</span>
+    </button>`).join("");
+  const fmt = S.format==="timer" ? `
+    <div class="flex items-baseline justify-between"><span class="font-semibold">${t("discussionTime")}</span><span id="minLabel" class="font-display text-2xl tnum">${S.minutes} ${t("min")}</span></div>
+    <input type="range" id="minutes" min="1" max="5" step="1" value="${S.minutes}" aria-label="${t("discussionTime")}">
+    <div class="flex justify-between text-xs text-[color:var(--mute)] tnum"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+    <p class="text-sm text-[color:var(--mute)]">${t("timerNote")}</p>`
+  : `
+    <div class="flex items-baseline justify-between"><span class="font-semibold">${t("numRounds")}</span><span class="font-display text-2xl tnum">${S.rounds}</span></div>
+    <div class="seg" style="grid-template-columns:repeat(5,1fr)">${[1,2,3,4,5].map(k=>`<button data-rounds="${k}" aria-pressed="${S.rounds===k}">${k}</button>`).join("")}</div>
+    <p class="text-sm text-[color:var(--mute)]">${t("roundsNote",S.rounds,n)}</p>`;
+  return `<section class="screen">
+    ${header(t("matchSettings"),t("configure"),"toSetup")}
+    <div class="scroll">
+      <div><div class="label px-1 mb-2">${t("impostors")}</div>
+        <div class="group p-4 flex flex-col gap-3">
+          <div class="seg" style="grid-template-columns:repeat(3,1fr)">${impBtns}</div>
+          <p class="text-sm text-[color:var(--mute)]">${t("impHint",n,max)}</p>
+        </div></div>
+      <div><div class="label px-1 mb-2">${t("wordCategory")}</div><div class="group overflow-hidden">${cats}</div></div>
+      <div><div class="label px-1 mb-2">${t("gameEndsBy")}</div>
+        <div class="group p-4 flex flex-col gap-3">
+          <div class="seg" style="grid-template-columns:1fr 1fr">
+            <button data-fmt="rounds" aria-pressed="${S.format==="rounds"}">${t("rounds")}</button>
+            <button data-fmt="timer" aria-pressed="${S.format==="timer"}">${t("timer")}</button>
+          </div>
+          ${fmt}
+        </div></div>
+    </div>
+    <div class="dock"><button class="btn btn-primary" data-act="deal">${icon("layers")} ${t("deal")}</button></div>
+  </section>`;
+}
+
+/* ---------- 3. Pass & peek ---------- */
+function vPass(){
+  const p=S.players[S.peekIdx], isImp=S.impSet.has(S.peekIdx), total=S.players.length, w=curWord();
+  if(S.phase==="pass") return `<section class="screen">
+    <div class="pt-4 pb-2 flex items-center justify-between"><span class="label">${t("cardOf",S.peekIdx+1,total)}</span>
+      <div class="flex gap-1">${S.players.map((_,i)=>`<span class="h-1.5 rounded-full" style="width:${i===S.peekIdx?18:6}px;background:${i<S.peekIdx?"var(--crew)":i===S.peekIdx?"var(--violet)":"var(--line)"}"></span>`).join("")}</div></div>
+    <div class="flex-1 flex flex-col items-center justify-center text-center gap-5 py-10">
+      <div class="w-24 h-24 rounded-[28px] grid place-items-center pulse" style="background:${color(p)}">${icon("smartphone","w-11 h-11 text-[#0a0b1e]")}</div>
+      <div><div class="text-[color:var(--mute)] text-lg">${t("passTo")}</div>${V("passTo","text-sm")}
+      <div class="font-display text-[40px] font-bold leading-tight mt-1">${esc(p)}</div></div>
+      <p class="text-[color:var(--mute)] max-w-[280px]">${t("lookAway",esc(p))}</p>
+    </div>
+    <div class="dock"><button class="btn btn-primary" data-act="iam">${t("iam",esc(p))}</button></div>
+  </section>`;
+  const front = isImp ? `
+      <div class="face front imp ${S.vi?"bi":""}">
+        ${icon("skull",(S.vi?"w-9 h-9":"w-12 h-12")+" text-[color:var(--imp)] flex-none")}
+        <div class="label mt-2" style="color:#ff9aac">${t("yourRole")}</div>
+        <div class="font-display ${S.vi?"text-[22px]":"text-[26px]"} font-bold leading-tight mt-1" style="color:var(--imp)">${t("youAreImp")}</div>
+        ${V("youAreImp","vi-strong","")}
+        <div class="${S.vi?"mt-3":"mt-4"} px-3 py-2 rounded-xl text-[15px]" style="background:#00000040;color:#ffd0d8">${t("hint")}: ${esc(w.hint)}
+          ${S.vi?`<div class="vi" lang="vi">${VI.hint}: ${esc(w.viHint)}</div>`:""}</div>
+        <div class="text-xs ${S.vi?"mt-3":"mt-4"}" style="color:#ff9aac">${t("blendIn")}</div>${V("blendIn","text-[11px]")}
+      </div>` : `
+      <div class="face front crew ${S.vi?"bi":""}">
+        ${icon("shield-check",(S.vi?"w-9 h-9":"w-12 h-12")+" text-[color:var(--crew)] flex-none")}
+        <div class="label mt-2" style="color:#9dffc9">${t("crewSecret")}</div>
+        <div class="font-display ${S.vi?"text-[26px]":"text-[30px]"} font-bold leading-tight mt-2" style="color:var(--crew);text-wrap:balance">${esc(w.word)}</div>
+        ${S.vi?`<div class="vi-word" lang="vi">${esc(w.viWord)}</div>`:""}
+        <div class="text-xs ${S.vi?"mt-4":"mt-5"}" style="color:#9dffc9">${t("findWho")}</div>${V("findWho","text-[11px]")}
+      </div>`;
+  return `<section class="screen">
+    <div class="pt-4 pb-3 text-center"><div class="label">${t("cardTitle",esc(p))}</div>
+      <div class="text-[15px] text-[color:var(--mute)] mt-1">${t("holdHint")}</div>${V("holdHint","text-[13px]")}</div>
+    <div class="table">
+      <div class="card3d" id="card" role="button" aria-label="${t("revealAria")}">
+        <div class="inner">
+          <div class="face back">
+            <div class="emblem">${icon("eye-off","w-9 h-9 text-[color:var(--violet)]")}</div>
+            <div class="font-display text-white font-bold mt-4 tracking-widest text-sm">${t("holdToReveal")}</div>
+          </div>
+          ${front}
+        </div>
+      </div>
+      <div class="absolute bottom-4 left-0 right-0 flex justify-center text-xs text-[#7fb3b3] gap-1.5 items-center">${icon("hand","w-4 h-4")} ${t("keepFinger")}</div>
+    </div>
+    <div class="dock"><button class="btn btn-ghost" data-act="seen" id="seenBtn" ${S.peeked?"":"disabled"}>${icon("check")} ${esc(t("gotIt"))}</button></div>
+  </section>`;
+}
+
+/* ---------- 4. Ready + Play ---------- */
+function vReady(){
+  return `<section class="screen">
+    ${header(t("everyonesIn"),t("allDealt"))}
+    <div class="flex-1 flex flex-col items-center justify-center text-center gap-6 py-6">
+      <div class="pop w-28 h-28 rounded-[32px] grid place-items-center" style="background:var(--deck-2);border:1px solid var(--line)">${icon("rocket","w-14 h-14 text-[color:var(--crew)]")}</div>
+      <div class="group p-4 w-full text-left flex flex-col gap-2">
+        <div class="flex items-center gap-2 font-semibold">${icon("info","w-4 h-4 text-[color:var(--violet)]")} ${t("howToPlay")}${S.vi?` <span class="vi-inline" lang="vi">· ${VI.howToPlay}</span>`:""}</div>
+        <p class="text-[15px] text-[color:var(--mute)]">${t("howText")}</p>${V("howText","text-[14px]")}
+        <p class="text-[15px] text-[color:var(--mute)]">${t("starts",esc(S.players[S.starter]))} ${S.format==="timer"?t("youHave",S.minutes):t("playRounds",S.rounds)}</p>
+      </div>
+    </div>
+    <div class="dock"><button class="btn btn-crew font-display tracking-wider" data-act="start">${icon("play")} ${t("startGame")}</button></div>
+  </section>`;
+}
+function vPlay(){
+  const order=S.players.map((_,i)=>S.players[(S.starter+i)%S.players.length]);
+  const chips=order.map((n,i)=>`<span class="inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full text-sm" style="background:var(--deck-2)"><span class="w-6 h-6 rounded-full grid place-items-center text-xs font-bold text-[#0a0b1e]" style="background:${color(n)}">${i+1}</span>${esc(n)}</span>`).join("");
+  let core;
+  if(S.format==="timer"){
+    const total=S.total||S.minutes*60, C=2*Math.PI*108, low=S.timeLeft<=10;
+    const m=Math.floor(S.timeLeft/60), sec=String(S.timeLeft%60).padStart(2,"0");
+    core=`<div class="ring relative mx-auto">
+      <svg viewBox="0 0 240 240" class="w-full h-full -rotate-90">
+        <circle cx="120" cy="120" r="108" fill="none" stroke="var(--deck-2)" stroke-width="14"/>
+        <circle id="arc" cx="120" cy="120" r="108" fill="none" stroke="${low?"var(--imp)":"var(--crew)"}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-S.timeLeft/total)}" style="transition:stroke-dashoffset 1s linear, stroke .3s"/>
+      </svg>
+      <div class="absolute inset-0 grid place-items-center text-center"><div>
+        <div id="clock" class="font-display text-[56px] font-bold tnum leading-none" style="color:${low?"var(--imp)":"var(--ink)"}">${S.timeLeft===0?t("timeUp"):`${m}:${sec}`}</div>
+        <div class="label mt-2">${S.running?t("discussing"):t("paused")}</div></div></div>
+    </div>${V("timerLine","text-[14px] text-center")}`;
+  } else {
+    core=`<div class="group p-6 text-center">
+      <div class="label">${t("round")}</div>
+      <div class="font-display font-bold tnum leading-none mt-2"><span class="text-[72px] text-[color:var(--crew)]">${S.round}</span><span class="text-3xl text-[color:var(--mute)]">/${S.rounds}</span></div>
+      <div class="flex gap-1.5 justify-center mt-4">${Array.from({length:S.rounds},(_,i)=>`<span class="h-2 w-8 rounded-full" style="background:${i<S.round-1?"var(--violet)":i===S.round-1?"var(--crew)":"var(--line)"}"></span>`).join("")}</div>
+      <p class="mt-4 text-[15px]">${t("roundLine",S.round,S.rounds)}</p>${V("roundLine","text-[14px]")}
+    </div>`;
+  }
+  const dock = S.format==="timer"
+    ? `<div class="grid grid-cols-2 gap-2"><button class="btn btn-ghost" data-act="pause">${S.running?icon("pause")+" "+t("pause"):icon("play")+" "+t("resume")}</button>
+       <button class="btn btn-ghost" data-act="addmin">${icon("timer")} ${t("plus30")}</button></div>
+       <button class="btn btn-imp" data-act="endGame">${icon("vote")} ${esc(t("endVote"))}</button>`
+    : `<button class="btn btn-crew" data-act="roundDone">${icon("check-check")} ${S.round<S.rounds?t("roundDone"):t("finalRoundDone")}</button>
+       <button class="btn btn-ghost" data-act="endGame">${icon("vote")} ${esc(t("endVote"))}</button>`;
+  return `<section class="screen" id="playScreen">
+    ${header(S.format==="timer"?t("clockTicking"):t("sayWords"),t("liveMatch")+" · "+t("cat_"+S.category))}
+    <div class="scroll">
+      ${core}
+      <div><div class="label px-1 mb-2">${t("speakingOrder")}</div><div class="flex flex-wrap gap-2">${chips}</div></div>
+      <p class="text-sm text-[color:var(--mute)] px-1">${t("impAmong",S.impSet.size)}</p>
+    </div>
+    <div class="dock">${dock}</div>
+  </section>`;
+}
+
+/* ---------- 5. Vote + Results ---------- */
+function vVote(){
+  const need=S.impSet.size;
+  const tiles=S.players.map((n,i)=>`<button class="vote" data-vote="${i}" aria-pressed="${S.votes.has(i)}">
+      <div class="flex w-full items-center justify-between">${avatar(n)}<span class="tick">${S.votes.has(i)?icon("check","w-4 h-4 text-white"):""}</span></div>
+      <span class="font-semibold text-[16px] break-words w-full">${esc(n)}</span>
+    </button>`).join("");
+  return `<section class="screen">
+    ${header(t("whosSus"),t("voting"))}
+    <div class="scroll">
+      <div class="px-1"><p class="text-[15px] text-[color:var(--mute)]">${t("votePick",need)}</p>${V("votePick","text-[14px]",need)}</div>
+      <div class="grid grid-cols-2 gap-3">${tiles}</div>
+    </div>
+    <div class="dock"><button class="btn btn-imp" data-act="reveal" ${S.votes.size===need?"":"disabled"}>${icon("scan-eye")} ${t("reveal",S.votes.size,need)}</button></div>
+  </section>`;
+}
+function saveStateHtml(){
+  const m={saving:["loader",t("saving"),"var(--mute)"],saved:["database",t("saved"),"var(--crew)"],
+    failed:["triangle-alert",t("failed"),"var(--imp)"],local:["smartphone",t("local"),"var(--mute)"]}[S.saveState||"local"];
+  return `<span class="inline-flex items-center gap-1.5" style="color:${m[2]}">${icon(m[0],"w-4 h-4")} ${m[1]}</span>`;
+}
+function vResults(){
+  const crewWin=S.result==="crew", w=curWord();
+  const rows=S.players.map((n,i)=>{
+    const imp=S.impSet.has(i), voted=S.votes.has(i), won=imp?!crewWin:crewWin;
+    return `<div class="flex items-center gap-3 px-4 py-3 ${i?"border-t border-[color:var(--line)]":""}">
+      ${avatar(n)}
+      <div class="flex-1 min-w-0"><div class="font-semibold truncate">${esc(n)}</div>
+        <div class="text-sm flex items-center gap-2 flex-wrap">
+          <span style="color:${imp?"var(--imp)":"var(--crew)"}">${imp?t("impostor"):t("crewmate")}</span>
+          ${voted?`<span class="inline-flex items-center gap-1 text-[color:var(--mute)]">${icon("target","w-3.5 h-3.5")} ${t("votedOut")}</span>`:""}
+        </div></div>
+      <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:${won?"#3dff9a22":"#ff2e5522"};color:${won?"var(--crew)":"var(--imp)"}">${won?t("win"):t("loss")}</span>
+    </div>`;}).join("");
+  return `<section class="screen">
+    <div class="scroll pt-4">
+      <div class="pop text-center rounded-[24px] p-6" style="background:${crewWin?"linear-gradient(160deg,#07301f,#0c1d3a)":"linear-gradient(160deg,#3d0716,#1c0b33)"};border:1px solid ${crewWin?"#3dff9a55":"#ff2e5555"}">
+        ${icon(crewWin?"shield-check":"skull",`w-14 h-14 mx-auto ${crewWin?"text-[color:var(--crew)]":"text-[color:var(--imp)]"}`)}
+        <div class="font-display text-[34px] font-bold mt-2" style="color:${crewWin?"var(--crew)":"var(--imp)"}">${crewWin?t("crewWins"):t("impWins")}</div>${V(crewWin?"crewWins":"impWins","vi-strong")}
+        <p class="text-[15px] mt-1" style="color:#d6d8ff">${crewWin?t("everyCaught"):t("gotAway",S.impSet.size)}</p>
+        <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full" style="background:#00000040">
+          <span class="label" style="color:#c5c8f5">${t("secretWord")}</span><span class="font-display font-bold">${esc(w.word)}</span>${S.vi?`<span class="vi-inline" lang="vi">· ${esc(w.viWord)}</span>`:""}</div>
+      </div>
+      <div><div class="label px-1 mb-2">${t("rolesRevealed")}</div><div class="group overflow-hidden">${rows}</div></div>
+      <div id="saveState" class="text-center text-sm">${saveStateHtml()}</div>
+    </div>
+    <div class="dock"><button class="btn btn-primary" data-act="again">${icon("rotate-ccw")} ${t("playAgain")}</button>
+      <div class="grid grid-cols-3 gap-2">
+        <button class="btn btn-ghost text-[15px]" data-act="toHome">${icon("house","w-4 h-4")} ${t("home")}</button>
+        <button class="btn btn-ghost text-[15px]" data-act="board">${icon("trophy","w-4 h-4")} ${t("leaderboard")}</button>
+        <button class="btn btn-ghost text-[15px]" data-act="toSetup">${icon("users","w-4 h-4")} ${t("players")}</button></div></div>
+  </section>`;
+}
+
+/* ---------- Bottom sheets ---------- */
+function closeSheet(){ S.sheet=null; $("#sheet").innerHTML=""; }
+function sheet(kind,inner){
+  const again = S.sheet===kind && !!$("#sheet .sheet");   // same panel refreshing: no slide-up, no fade
+  S.sheet=kind;
+  $("#sheet").innerHTML=`<div class="sheet-back${again?" still":""}"><div class="sheet" role="dialog">
+    <div class="grab" aria-hidden="true"><span></span></div><div class="sheet-body">${inner}</div></div></div>`;
+  lucide.createIcons();
+  const back=$("#sheet .sheet-back"), sh=back.querySelector(".sheet");
+  back.addEventListener("click",e=>{ if(e.target===back || e.target.closest("button[data-close]")) closeSheet(); });
+  // Swipe down on the handle or title row to dismiss
+  let y0=null, dy=0, t0=0, pid=null;
+  [sh.querySelector(".grab"), sh.querySelector(".sheet-body > :first-child")].filter(Boolean).forEach(el=>{
+    el.classList.add("drag-zone");
+    el.addEventListener("pointerdown",e=>{ if(e.target.closest("button,input,a")) return; y0=e.clientY; dy=0; t0=performance.now(); pid=e.pointerId;
+      try{ el.setPointerCapture(pid); }catch(_){} sh.style.transition="none"; });
+    el.addEventListener("pointermove",e=>{ if(y0===null||e.pointerId!==pid) return; dy=Math.max(0,e.clientY-y0); sh.style.transform=`translateY(${dy}px)`; });
+    const end=()=>{ if(y0===null) return; const v=dy/Math.max(1,performance.now()-t0); y0=null;
+      sh.style.transition="transform .25s cubic-bezier(.2,.8,.2,1)";
+      if(dy>110||v>.6){ sh.style.transform="translateY(110%)"; back.style.transition="opacity .25s"; back.style.opacity="0"; setTimeout(closeSheet,230); }
+      else sh.style.transform=""; };
+    el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end);
+  });
+}
+const sheetHead = title => `<div class="flex items-center justify-between gap-3"><h2 class="font-display text-2xl font-bold">${title}</h2>
+  <button data-close="1" class="w-9 h-9 rounded-full grid place-items-center flex-none" style="background:var(--deck-2)" aria-label="${t("close")}">${icon("x","w-5 h-5")}</button></div>`;
+function dbNote(){
+  return S.dbStatus==="live"?`${icon("database","w-3.5 h-3.5")} ${t("dbSynced")}`:
+    S.dbStatus==="readonly"?`${icon("lock","w-3.5 h-3.5")} ${t("dbView")}`:`${icon("smartphone","w-3.5 h-3.5")} ${t("dbLocal")}`;
+}
+function rateOf(p){ const g=p.wins+p.losses; return g?Math.round(p.wins/g*100):0; }
+
+/* Options */
+function openOptions(){
+  const rows=Object.entries(LANGS).map(([k,name],i)=>`
+    <button data-lang="${k}" class="w-full flex items-center gap-3 px-4 py-3.5 text-left ${i?"border-t border-[color:var(--line)]":""}">
+      <span class="w-9 h-9 rounded-xl grid place-items-center font-display font-bold text-sm" style="background:var(--deck-2)">${k.toUpperCase()}</span>
+      <span class="flex-1 font-semibold">${name}${k==="en"?` <span class="text-xs font-normal" style="color:var(--mute)">· default</span>`:""}</span>
+      <span class="w-6 h-6 rounded-full grid place-items-center" style="${S.lang===k?"background:var(--violet)":"border:2px solid var(--line)"}">${S.lang===k?icon("check","w-4 h-4 text-white"):""}</span>
+    </button>`).join("");
+  sheet("options",`${sheetHead(t("optionsTitle"))}
+    <div class="label mt-4 mb-2 px-1">${t("language")}</div>
+    <div class="group overflow-hidden">${rows}</div>
+    <p class="text-sm mt-2 px-1" style="color:var(--mute)">${t("langNote")}</p>
+    <div class="label mt-5 mb-2 px-1">${t("extras")}</div>
+    <button id="viToggle" role="switch" aria-checked="${S.vi}" class="group w-full flex items-center gap-3 px-4 py-3.5 text-left">
+      <span class="w-9 h-9 rounded-xl grid place-items-center font-display font-bold text-sm flex-none" style="background:var(--deck-2)">VI</span>
+      <span class="flex-1 min-w-0"><span class="block font-semibold">${t("viTitle")}</span><span class="block text-sm" style="color:var(--mute)" lang="vi">Tiếng Việt</span></span>
+      <span class="switch" aria-hidden="true"><span></span></span>
+    </button>
+    <p class="text-sm mt-2 px-1" style="color:var(--mute)">${t("viNote")}</p>
+    ${S.vi?`<div class="mt-3 rounded-xl px-4 py-3 text-center" style="background:var(--deck-2)"><div class="font-display font-bold text-lg">${S.lang==="nl"?"Koffiezetapparaat":"Coffee Maker"}</div><div class="vi-word" lang="vi">Máy pha cà phê</div></div>`:""}
+    <button data-close="1" class="btn btn-primary mt-5">${t("done")}</button>`);
+  $("#viToggle").addEventListener("click",()=>{ S.vi=!S.vi; try{ localStorage.setItem("hi-vi",S.vi?"1":"0"); }catch(e){} haptic(); render(); openOptions(); });
+  document.querySelectorAll("[data-lang]").forEach(b=>b.addEventListener("click",()=>{
+    S.lang=b.dataset.lang; document.documentElement.lang=S.lang;
+    try{ localStorage.setItem("hi-lang",S.lang); }catch(e){}
+    haptic(); render(); openOptions();
+  }));
+}
+
+/* Leaderboard with swipe-left delete */
+function openBoard(keep){
+  const prev=keep?($("#boardList")||{}).scrollTop:0;
+  const canDel=S.dbStatus!=="readonly";
+  const list=Object.entries(S.board).sort((a,b)=>b[1].wins-a[1].wins || a[1].losses-b[1].losses || a[1].name.localeCompare(b[1].name));
+  const rows=list.length?list.map(([k,p],i)=>{ const rate=rateOf(p);
+    return `<div class="swipe ${i?"border-t border-[color:var(--line)]":""}" data-k="${esc(k)}">
+      ${canDel?`<button class="swipe-del" data-del="${esc(k)}">${icon("trash-2","w-5 h-5")}<span>${t("del")}</span></button>`:""}
+      <div class="swipe-row flex items-center gap-3 py-3">
+        <span class="w-6 text-center font-display font-bold tnum ${i===0?"text-[color:var(--crew)]":"text-[color:var(--mute)]"}">${i+1}</span>
+        ${avatar(p.name)}
+        <div class="flex-1 min-w-0"><div class="font-semibold truncate">${esc(p.name)}</div>
+          <div class="h-1.5 rounded-full mt-1.5 overflow-hidden" style="background:var(--deck-2)"><div class="h-full rounded-full" style="width:${rate}%;background:var(--crew)"></div></div></div>
+        <div class="text-right tnum text-sm pr-1"><div><b class="text-[color:var(--crew)]">${p.wins}W</b> <span class="text-[color:var(--imp)]">${p.losses}L</span></div><div class="text-[color:var(--mute)] text-xs">${t("winsPct",rate)}</div></div>
+      </div>
+    </div>`;}).join("")
+  : `<div class="py-10 text-center text-[color:var(--mute)]">${icon("trophy","w-10 h-10 mx-auto mb-3 opacity-50")}${t("noMatches")}</div>`;
+  sheet("board",`${sheetHead(t("leaderboard"))}
+    <div class="text-xs text-[color:var(--mute)] flex items-center gap-1.5 mt-1">${dbNote()}</div>
+    ${list.length&&canDel?`<div class="text-xs flex items-center gap-1.5 mt-1 mb-2" style="color:var(--mute)">${icon("arrow-left","w-3.5 h-3.5")} ${t("swipeHint")}</div>`:`<div class="mb-2"></div>`}
+    <p id="boardMsg" class="text-sm min-h-0" style="color:var(--imp)"></p>
+    <div id="boardList" class="overflow-y-auto min-h-0 flex-1">${rows}</div>
+    ${list.length&&canDel?`<button id="resetBoard" class="mt-3 text-sm text-[color:var(--imp)] self-center py-2">${t("resetAll")}</button>`:""}`);
+  const bl=$("#boardList"); if(bl&&prev) bl.scrollTop=prev;
+  bindSwipes();
+  const r=$("#resetBoard"); if(r) r.addEventListener("click",async()=>{
+    if(!r.dataset.armed){ r.dataset.armed=1; r.textContent=t("resetConfirm"); return; }
+    r.textContent=t("erasing");
+    for(const k of Object.keys(S.board)) await deletePlayer(k);
+    onBoardChange();
+  });
+}
+function bindSwipes(){
+  const OPEN=-96; let openRow=null;
+  const setX=(row,x,anim)=>{ row.style.transition=anim?"transform .22s cubic-bezier(.2,.8,.2,1)":"none"; row.style.transform=x?`translateX(${x}px)`:""; row.dataset.x=x; };
+  const closeOpen=except=>{ if(openRow&&openRow!==except){ setX(openRow,0,true); const d=openRow.parentElement.querySelector(".swipe-del"); if(d){ d.dataset.armed=""; d.querySelector("span").textContent=t("del"); } openRow=null; } };
+  document.querySelectorAll(".swipe").forEach(wrap=>{
+    const row=wrap.querySelector(".swipe-row"), del=wrap.querySelector(".swipe-del");
+    if(!del) return;
+    let x0=0,y0=0,base=0,mode=null,pid=null,moved=false;
+    row.addEventListener("pointerdown",e=>{ x0=e.clientX; y0=e.clientY; base=+row.dataset.x||0; mode=null; pid=e.pointerId; moved=false; });
+    row.addEventListener("pointermove",e=>{
+      if(e.pointerId!==pid||mode==="v") return;
+      const dx=e.clientX-x0, dy=e.clientY-y0;
+      if(!mode){ if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){ mode="h"; try{ row.setPointerCapture(pid); }catch(_){} closeOpen(row); }
+                 else if(Math.abs(dy)>8){ mode="v"; return; } else return; }
+      moved=true; setX(row,Math.max(-140,Math.min(0,base+dx)),false);
+    });
+    const end=()=>{ if(mode==="h"){ const x=+row.dataset.x||0; if(x<OPEN/2){ setX(row,OPEN,true); openRow=row; haptic(); } else { setX(row,0,true); if(openRow===row) openRow=null; } }
+      else if(!moved && (+row.dataset.x||0)<0){ setX(row,0,true); openRow=null; }
+      mode=null; pid=null; };
+    row.addEventListener("pointerup",end); row.addEventListener("pointercancel",end);
+    del.addEventListener("click",async()=>{
+      if(!del.dataset.armed){ del.dataset.armed="1"; del.querySelector("span").textContent=t("confirmDel"); haptic(20); return; }
+      del.disabled=true; del.querySelector("span").textContent="…";
+      const k=del.dataset.del, ok=await deletePlayer(k);
+      if(!ok){ $("#boardMsg").textContent=t("deleteFailed"); del.disabled=false; del.dataset.armed=""; del.querySelector("span").textContent=t("del"); setX(row,0,true); return; }
+      wrap.style.transition="opacity .2s, max-height .25s"; wrap.style.maxHeight=wrap.offsetHeight+"px"; requestAnimationFrame(()=>{ wrap.style.opacity="0"; wrap.style.maxHeight="0"; });
+      setTimeout(()=>onBoardChange(),260);
+    });
+  });
+}
+
+/* Register */
+function openRegister(missing, roster){
+  const rows=missing.map((n,i)=>`<div class="flex items-center gap-3 py-2.5 ${i?"border-t border-[color:var(--line)]":""}">${avatar(n)}
+    <div class="flex-1 min-w-0"><div class="font-semibold truncate">${esc(n)}</div><div class="text-xs text-[color:var(--mute)]">${t("newProfile")}</div></div></div>`).join("");
+  sheet("register",`${sheetHead(t("registerTitle",missing.length))}
+    <p class="text-[15px] text-[color:var(--mute)] mt-1 mb-2">${t("registerText")}</p>
+    <div class="overflow-y-auto min-h-0">${rows}</div>
+    <p id="regErr" class="text-sm text-[color:var(--imp)] min-h-[20px] mt-2"></p>
+    <button id="regGo" class="btn btn-crew">${icon("user-plus")} ${esc(t("registerGo",missing.length))}</button>
+    <button data-close="1" class="btn btn-ghost mt-2">${t("editNames")}</button>`);
+  $("#regGo").addEventListener("click",async e=>{
+    const b=e.currentTarget; b.disabled=true; b.textContent=t("registering");
+    const ok=await registerPlayers(missing);
+    if(!ok && DB){ b.disabled=false; b.innerHTML=icon("rotate-ccw")+" "+t("tryAgain"); lucide.createIcons();
+      $("#regErr").textContent=S.dbStatus==="readonly"?t("regErrView"):t("regErrNet"); return; }
+    closeSheet(); S.players=roster.map(n=>S.board[keyOf(n)].name); go("config");
+  });
+}
+
+/* Picker */
+function openPicker(keep){
+  const prev=keep?($("#pickList")||{}).scrollTop:0;
+  const q=S.pickQ.trim().toLowerCase();
+  const all=Object.entries(S.board).sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  const list=all.filter(([k,p])=>!q||p.name.toLowerCase().includes(q));
+  const full=S.pick.size>=10;
+  const rows=list.map(([k,p],i)=>{ const on=S.pick.has(k);
+    return `<button data-pk="${esc(k)}" aria-pressed="${on}" ${!on&&full?"disabled":""} class="w-full flex items-center gap-3 py-3 text-left ${i?"border-t border-[color:var(--line)]":""} ${!on&&full?"opacity-40":""}">
+      ${avatar(p.name)}
+      <div class="flex-1 min-w-0"><div class="font-semibold truncate">${esc(p.name)}</div>
+        <div class="text-xs tnum text-[color:var(--mute)] mt-0.5">${t("wl",`<b style="color:var(--crew)">${p.wins}</b>`,`<span style="color:var(--imp)">${p.losses}</span>`)} · ${rateOf(p)}%</div></div>
+      <span class="w-7 h-7 rounded-full grid place-items-center flex-none" style="${on?"background:var(--violet)":"border:2px solid var(--line)"}">${on?icon("check","w-4 h-4 text-white"):""}</span>
+    </button>`;}).join("");
+  const empty=!all.length?`<div class="py-10 text-center text-[color:var(--mute)]">${icon("users-round","w-10 h-10 mx-auto mb-3 opacity-50")}${t("noRegistered")}</div>`
+    : !list.length?`<div class="py-8 text-center text-[color:var(--mute)]">${t("noMatch",esc(S.pickQ))}</div>`:"";
+  const n=S.pick.size;
+  sheet("pick",`${sheetHead(t("registeredPlayers"))}
+    <div class="text-xs text-[color:var(--mute)] flex items-center gap-1.5 mt-1 mb-3">${dbNote()} · ${t("tapUpTo")}</div>
+    <form id="regForm" class="flex items-center gap-2 mb-1">
+      <label class="flex-1 min-w-0 flex items-center gap-2 px-3 h-11 rounded-xl" style="background:var(--deck-2)">${icon("user-plus","w-4 h-4 text-[color:var(--crew)] flex-none")}<input type="text" id="regName" maxlength="14" placeholder="${t("registerPlaceholder")}" autocomplete="off"></label>
+      <button type="submit" class="h-11 px-4 rounded-xl font-semibold flex-none" style="background:var(--crew);color:#03200f">${t("add")}</button>
+    </form>
+    <p id="regMsg" class="text-xs min-h-[16px] mb-1"></p>
+    ${all.length>6?`<label class="flex items-center gap-2 px-3 h-11 rounded-xl mb-1" style="background:var(--deck-2)">${icon("search","w-4 h-4 text-[color:var(--mute)]")}<input type="text" id="pickSearch" placeholder="${t("searchPlayers")}" autocomplete="off" value="${esc(S.pickQ)}"></label>`:""}
+    <div id="pickList" class="overflow-y-auto min-h-0 flex-1">${rows}${empty}</div>
+    <button id="pickUse" class="btn btn-primary mt-3" ${n?"":"disabled"}>${icon("user-check")} ${n?t("usePlayers",n)+(n<2?t("plusOneNew"):""):t("selectPlayers")}</button>`);
+  const pl=$("#pickList"); if(pl&&prev) pl.scrollTop=prev;
+  $("#regForm").addEventListener("submit",async e=>{
+    e.preventDefault(); const inp=$("#regName"), nm=inp.value.trim(), msg=$("#regMsg");
+    if(!nm){ msg.style.color="var(--imp)"; msg.textContent=t("typeName"); return; }
+    const k=keyOf(nm);
+    if(S.board[k]){ if(S.pick.size<10) S.pick.add(k); openPicker(true); return; }
+    msg.style.color="var(--mute)"; msg.textContent=t("registering");
+    const ok=await registerPlayers([nm]);
+    if(!ok && DB){ delete S.board[k]; saveBoard(); msg.style.color="var(--imp)"; msg.textContent=t("couldntSave"); return; }
+    if(S.pick.size<10) S.pick.add(k); S.pickQ=""; openPicker(true);
+  });
+  document.querySelectorAll("[data-pk]").forEach(b=>b.addEventListener("click",()=>{
+    const k=b.dataset.pk; if(S.pick.has(k)) S.pick.delete(k); else if(S.pick.size<10) S.pick.add(k); haptic(); openPicker(true); }));
+  const ps=$("#pickSearch"); if(ps) ps.addEventListener("input",()=>{ S.pickQ=ps.value; const pos=ps.selectionStart; openPicker(); const n2=$("#pickSearch"); if(n2){ n2.focus(); try{n2.setSelectionRange(pos,pos);}catch(e){} } });
+  $("#pickUse").addEventListener("click",()=>{
+    const order=[...S.pick].filter(k=>S.board[k]).map(k=>S.board[k].name);
+    S.count=Math.max(2,order.length); S.names=Array.from({length:10},(_,i)=>order[i]||"");
+    closeSheet(); go("setup");
+  });
+}
+
+/* ---------- Game logic ---------- */
+function deal(){
+  S.wordIdx=Math.floor(Math.random()*CATEGORIES[S.category].words.length);
+  S.impSet=new Set(shuffle(S.players.map((_,i)=>i)).slice(0,S.impostors));
+  S.peekIdx=0; S.phase="pass"; S.peeked=false; S.votes=new Set(); S.result=null;
+  S.round=1; S.starter=Math.floor(Math.random()*S.players.length);
+  S.timeLeft=S.total=S.minutes*60; stopTimer();
+  go("pass");
+}
+function stopTimer(){ clearInterval(S.timerId); S.timerId=null; S.running=false; }
+function startTimer(){
+  stopTimer(); S.running=true;
+  S.timerId=setInterval(()=>{
+    S.timeLeft=Math.max(0,S.timeLeft-1);
+    if(S.timeLeft<=5 && S.timeLeft>0) beep(1200,.06,0,"sine");
+    if(S.timeLeft===0){ stopTimer(); alarmSound(); haptic([200,100,200,100,400]);
+      const ps=$("#playScreen"); if(ps) ps.classList.add("alarm");
+      setTimeout(()=>{ if(S.screen==="play") go("vote"); },2600); }
+    if(S.screen==="play") updateClock();
+  },1000);
+}
+function updateClock(){
+  const total=S.total||S.minutes*60, C=2*Math.PI*108, low=S.timeLeft<=10;
+  const m=Math.floor(S.timeLeft/60), sec=String(S.timeLeft%60).padStart(2,"0");
+  const c=$("#clock"), a=$("#arc"); if(!c||!a) return;
+  c.textContent=S.timeLeft===0?t("timeUp"):`${m}:${sec}`; c.style.color=low?"var(--imp)":"var(--ink)";
+  a.setAttribute("stroke-dashoffset",C*(1-Math.min(1,S.timeLeft/total))); a.setAttribute("stroke",low?"var(--imp)":"var(--crew)");
+}
+function finish(){
+  const crew=[...S.votes].every(i=>S.impSet.has(i)) && S.votes.size===S.impSet.size;
+  S.result=crew?"crew":"imp";
+  const w=CATEGORIES[S.category].words[S.wordIdx];
+  // Compute every player's new record from one consistent view before anything is saved
+  const updates=S.players.map((n,i)=>{
+    const key=keyOf(n), cur=S.board[key]||{name:n.trim(),wins:0,losses:0};
+    const imp=S.impSet.has(i), won=imp?!crew:crew;
+    return {key, imp, won, voted:S.votes.has(i), rec:{name:cur.name, wins:(cur.wins|0)+(won?1:0), losses:(cur.losses|0)+(won?0:1)}};
+  });
+  updates.forEach(u=>{ S.board[u.key]=u.rec; });
+  saveBoard(); haptic(crew?30:[60,40,60]);
+  crew?[523,659,784,1047].forEach((f,i)=>beep(f,.16,i*.12,"triangle")):[400,330,262].forEach((f,i)=>beep(f,.22,i*.18,"sawtooth"));
+  S.saveState=DB?"saving":"local";
+  go("results");
+  (async()=>{
+    const res=await Promise.all(updates.map(u=>writeRecord(u.key,u.rec)));
+    const ok=res.every(Boolean);
+    logMatch({at:new Date().toISOString(), result:S.result, category:S.category, word:w[0],
+      players:updates.map(u=>({key:u.key, name:u.rec.name, role:u.imp?"impostor":"crew", won:u.won, votedOut:u.voted})), saved:ok});
+    S.saveState=DB?(ok?"saved":"failed"):"local"; const el=$("#saveState"); if(el){ el.innerHTML=saveStateHtml(); lucide.createIcons(); }
+  })();
+}
+
+/* ---------- Events ---------- */
+function bind(){
+  document.querySelectorAll("[data-name]").forEach(el=>el.addEventListener("input",()=>{
+    const i=+el.dataset.name; S.names[i]=el.value; const av=el.previousElementSibling; const n=el.value||String(i+1);
+    av.style.background=color(n); av.textContent=(n.trim()[0]||"?").toUpperCase();
+    const rb=document.querySelector(`[data-rec="${i}"]`); if(rb) rb.innerHTML=recBadge(el.value);
+  }));
+  document.querySelectorAll("[data-imp]").forEach(b=>b.onclick=()=>{S.impostors=+b.dataset.imp; haptic(); render();});
+  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{S.category=b.dataset.cat; haptic(); render();});
+  document.querySelectorAll("[data-fmt]").forEach(b=>b.onclick=()=>{S.format=b.dataset.fmt; haptic(); render();});
+  document.querySelectorAll("[data-rounds]").forEach(b=>b.onclick=()=>{S.rounds=+b.dataset.rounds; haptic(); render();});
+  const mr=$("#minutes"); if(mr) mr.oninput=()=>{ S.minutes=+mr.value; $("#minLabel").textContent=S.minutes+" "+t("min"); };
+  document.querySelectorAll("[data-vote]").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.vote, need=S.impSet.size;
+    if(S.votes.has(i)) S.votes.delete(i); else { if(need===1) S.votes.clear(); if(S.votes.size<need) S.votes.add(i); }
+    haptic(); render();
+  });
+  document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>act(b.dataset.act));
+  const card=$("#card");
+  if(card){
+    const show=e=>{ e.preventDefault(); card.classList.remove("snap"); card.classList.add("flipped"); haptic(15);
+      if(!S.peeked){ S.peeked=true; const sb=$("#seenBtn"); if(sb) sb.disabled=false; } };
+    const hide=()=>{ if(!card.classList.contains("flipped")) return; card.classList.add("snap"); card.classList.remove("flipped"); };
+    card.addEventListener("pointerdown",e=>{ try{card.setPointerCapture(e.pointerId);}catch(_){} show(e); });
+    ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>card.addEventListener(ev,hide));
+    card.addEventListener("contextmenu",e=>e.preventDefault());
+    card.addEventListener("keydown",e=>{ if(e.key===" "||e.key==="Enter") show(e); });
+    card.addEventListener("keyup",hide); card.tabIndex=0;
+  }
+}
+function act(a){
+  haptic();
+  switch(a){
+    case "board": openBoard(); break;
+    case "options": openOptions(); break;
+    case "minus": if(S.count>2){S.count--; render();} break;
+    case "plus": if(S.count<10){S.count++; render();} break;
+    case "toHome": stopTimer(); go("home"); break;
+    case "toSetup": stopTimer(); go("setup"); break;
+    case "pick": S.pick=new Set(S.names.slice(0,S.count).filter(n=>n&&n.trim()&&S.board[keyOf(n)]).map(keyOf)); S.pickQ=""; openPicker(); break;
+    case "toConfig": {
+      const names=S.names.slice(0,S.count).map(n=>(n||"").trim());
+      if(names.some(n=>!n)){ $("#err").textContent=t("errEmpty"); return; }
+      const keys=names.map(keyOf);
+      if(new Set(keys).size!==keys.length){ $("#err").textContent=t("errDup"); return; }
+      const missing=names.filter(n=>!S.board[keyOf(n)]);
+      if(missing.length){ openRegister(missing,names); return; }
+      S.players=names.map(n=>S.board[keyOf(n)].name); go("config"); break; }
+    case "deal": audio(); deal(); break;
+    case "iam": S.phase="peek"; S.peeked=false; render(); break;
+    case "seen":
+      if(S.peekIdx<S.players.length-1){ S.peekIdx++; S.phase="pass"; S.peeked=false; render(); } else go("ready");
+      break;
+    case "start": audio(); beep(660,.1); beep(990,.14,.12);
+      if(S.format==="timer"){ S.timeLeft=S.total=S.minutes*60; go("play"); startTimer(); } else { S.round=1; go("play"); }
+      break;
+    case "pause": if(S.running) stopTimer(); else if(S.timeLeft>0) startTimer(); render(); break;
+    case "addmin": S.timeLeft+=30; S.total=Math.max(S.total,S.timeLeft); updateClock(); break;
+    case "roundDone": beep(880,.1,0,"triangle"); if(S.round<S.rounds){ S.round++; render(); } else go("vote"); break;
+    case "endGame": stopTimer(); go("vote"); break;
+    case "reveal": finish(); break;
+    case "again": S.votes=new Set(); go("config"); break;
+  }
+}
+render();
+connectDB();
+</script>
+
+</body></html>
